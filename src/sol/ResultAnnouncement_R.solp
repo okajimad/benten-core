@@ -1,0 +1,48 @@
+pragma solidity ^0.4.0;
+
+import "./ICoinCashier.sol";
+import "./BettingTarget_V8.sol";
+import "./BettingTarget_V16.sol";
+
+contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
+	uint internal _openTime;
+	uint internal _closeTime;
+	bool internal _closed;
+
+	event Closed(RESULT_TYPE truth);
+
+	constructor(address cashier, address regulation, uint open_time, uint duration_min) public {
+		_cashier = ICoinCashier(cashier);
+		_regulation = IRegulation(regulation);
+		_openTime = open_time;
+		_closeTime = open_time + (duration_min * 1 minutes);
+		_closed = false;
+	}
+	function cashier() public view returns(address) {
+		return _cashier;
+	}
+	function regulation() public view returns(address) {
+		return _regulation;
+	}
+
+	function voteAcceptable() public view returns(bool) {
+		return _openTime <= getNow() && getNow() < _closeTime;
+	}
+	function openTime() public view returns(uint) {
+		return _openTime;
+	}
+	function closeTime() public view returns(uint) {
+		return _closeTime;
+	}
+	function isClosed() public view returns(bool) {
+		return _closed;
+	}
+	function beforeOpen() public view returns(bool) {
+		return _openTime > getNow();
+	}
+	function verifyContent(bytes8 c) public view returns(bool) {
+		return _regulation.verifyVotingContent(c);
+	}
+	function truth() public view returns(RESULT_TYPE);
+
+}

@@ -1,0 +1,28 @@
+{
+  "name": "benten",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "preprocess": "node src/tools/benten_preprocess.js",
+    "compile": "npm run preprocess && truffle compile",
+    "clean": "node src/tools/clean.js",
+    "test": "mocha mochatest -g ",
+    "soltest": "truffle test ",
+    "tc": "truffle compile",
+    "tm": "truffle migrate"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "c-tokenizer": "^1.0.0",
+    "filepath": "^1.1.0",
+    "fs": "0.0.1-security",
+    "fs-extra": "^5.0.0",
+    "mocha": "^5.1.1",
+    "solc": "^0.4.23",
+    "truffle": "^4.1.8",
+    "truffle-config": "^1.0.4",
+    "truffle-workflow-compile": "^1.0.3"
+  }
+}

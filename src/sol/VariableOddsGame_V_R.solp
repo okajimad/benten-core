@@ -1,0 +1,207 @@
+pragma solidity ^0.4.0;
+import "./CoinCashier.sol";
+import "./IRegulation.sol";
+import "./GameBase_V8_R8.sol";
+import "./GameBase_V16_R8.sol";
+
+
+contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE {
+	struct Entry {
+		uint32 odds;
+		VOTE_TYPE content;
+		uint volume; 
+	}
+	struct CurrentOdds {
+		uint32 odds;
+		VOTE_TYPE content;
+	}
+	mapping (address => Entry[]) private _entries;
+	address[] private _addresses;
+	uint private _betCount;
+	CurrentOdds[] private _currentOdds;
+
+	uint[] private _refunds;
+	uint private _totalRefunds;
+	uint private _totalBettings;
+
+	constructor(address cashier, address voting, address regulation, uint open_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (cashier, voting, regulation, open_time) {
+		_allowCancel = allow_cancel;
+	}
+
+	function oddsList() public view returns(VOTE_TYPE[], uint[]) {
+		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_currentOdds.length);
+		uint[] memory odds = new uint[](_currentOdds.length);
+ 		uint i;
+		for(i=0; i<_currentOdds.length; i++) {
+			candidates[i] = _currentOdds[i].content;
+			odds[i] = _currentOdds[i].odds;
+		}
+		return (candidates, odds);
+
+	}
+
+	function updateOdds(VOTE_TYPE content, uint32 value) public onlyOwner {
+		uint32 index = findOrCreateOdds(content);
+		_currentOdds[index].odds = value;
+	}
+
+	function betBody(address from, VOTE_TYPE content, uint coin) internal {
+		if(!betAcceptable()) 
+			ERROR_CASE("betting not acceptable")
+		entry(from, content, coin);
+	}
+
+	function entry(address from, VOTE_TYPE content, uint volume) private {
+
+		Entry[] storage e = _entries[from];
+		bool new_entry = e.length==0;
+		int index = findOddsIndex(content);
+		if(index==-1) ERROR_CASE("odds not found")
+
+		uint32 odds = _currentOdds[uint(index)].odds;
+		e.push(Entry(odds, content, volume));
+		if(new_entry) _addresses.push(from);
+
+		_betCount++;
+
+		emit Entried(msg.sender, content, volume);
+	}
+
+	function getBetting() public view returns(VOTE_TYPE[], uint[]) {
+		Entry[] storage e = _entries[msg.sender];
+		VOTE_TYPE[] memory b = new VOTE_TYPE[](e.length);
+		uint[] memory v = new uint[](e.length);
+		for(uint i=0; i<e.length; i++) {
+			b[i] = e[i].content;
+			v[i] = e[i].volume;
+		}
+		return (b, v);
+	}
+
+	function getCurrentBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
+		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_currentOdds.length);
+		uint i;
+		for(i=0; i<_currentOdds.length; i++)
+			candidates[i] = _currentOdds[i].content;
+
+		uint[] memory counts = new uint[](_currentOdds.length);
+		uint[] memory volumes = new uint[](_currentOdds.length);
+		for(i=0; i<_addresses.length; i++) {
+			address a= _addresses[i];
+			Entry[] storage e = _entries[a];
+			for(uint j=0; j<e.length; j++) {
+				Entry storage m = e[j];
+				int index = findOddsIndex(m.content);
+				if(index!=-1) {
+					uint ui = uint(index);
+					volumes[ui] += m.volume;
+					counts[ui] += 1;
+				}
+			}
+		}
+		return (candidates, counts, volumes);
+	}
+	function findOrCreateOdds(VOTE_TYPE content) private returns(uint32) {
+		for(uint i=0; i<_currentOdds.length; i++) {
+			if(content == _currentOdds[i].content)
+				return uint32(i);
+		}
+		_currentOdds.push(CurrentOdds(0, content));
+		return uint32(_currentOdds.length-1);
+	}
+	function findOddsIndex(VOTE_TYPE content) private view returns(int32) {
+		for(uint i=0; i<_currentOdds.length; i++) {
+			if(content == _currentOdds[i].content)
+				return int32(i);
+		}
+		return -1;
+	}
+
+	
+	function estimateTotalRefund(RESULT_TYPE truth) public view onlyOwner returns(uint) {
+		uint total_refund = 0;
+		for(uint i=0; i<_addresses.length; i++) {
+			address a= _addresses[i];
+			Entry[] storage e = _entries[a];
+			for(uint j=0; j<e.length; j++) {
+				Entry storage m = e[j];
+				if(m.volume!=0)
+					total_refund += calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
+			}
+		}
+		return total_refund;
+	}
+	
+
+	//Close Voting
+	function close() public onlyOwner returns (uint) {
+		if(!_resultSource.isClosed())
+			ERROR_CASE("voting address is not closed")
+		if(_cancelled)
+			ERROR_CASE("game is already cancelled")
+		if(_closed)
+			ERROR_CASE("game is already closed")
+		uint i;
+		address a;
+		RESULT_TYPE truth = _resultSource.truth(); //get correct answer
+		_totalBettings = CoinCashier(_cashier).balanceOf(this);
+		_totalRefunds = this.estimateTotalRefund(truth);
+
+		if(_totalRefunds > _totalBettings + _ownerSupply) 
+			ERROR_CASE("supply is insufficient")
+
+		for(i=0; i<_addresses.length; i++) {
+			a= _addresses[i];
+			Entry[] storage e = _entries[a];
+			for(uint j=0; j<e.length; j++) {
+				Entry storage m = e[j];
+				if(m.volume!=0) {
+					uint refund = calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
+					_cashier.transferCoin(a, refund);
+				}
+			}
+		}
+		
+		//remaining coin go to the owner of this game
+		_cashier.transferCoin(this.getOwner(), _totalBettings - _totalRefunds);
+		
+		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
+	}
+
+	function cancelGame() public onlyOwner {
+		if(_closed)
+			ERROR_CASE("game is already closed")
+		if(_cancelled)
+			ERROR_CASE("game is already cancelled")
+		if(!_allowCancel)
+			ERROR_CASE("cancel is not allowed")
+
+		_totalRefunds = 0;
+		for(uint i=0; i<_addresses.length; i++) {
+			address a = _addresses[i];
+			Entry[] storage e = _entries[a];
+			uint refund = 0;
+			for(uint j=0; j<e.length; j++) {
+				refund += e[j].volume;
+			}
+			if(refund>0)
+				_cashier.transferCoin(a, refund);
+			_refunds.push(refund);
+			_totalRefunds += refund;
+		}
+		
+		if(_ownerSupply>0)
+			_cashier.transferCoin(this.getOwner(), _ownerSupply);
+		_cancelled = true;
+
+		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
+	}
+
+	function calculateRefundWithOdds(VOTE_TYPE content, RESULT_TYPE truth, uint odds, uint volume) public pure returns(uint) {
+		if(content==truth)
+			return volume * odds / 1000; //odds is permil
+		else
+			return 0;
+	}
+
+}

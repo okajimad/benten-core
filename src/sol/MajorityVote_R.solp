@@ -1,0 +1,160 @@
+pragma solidity ^0.4.0;
+
+import "./ICoinCashier.sol";
+import "./ResultAnnouncement_R8.sol";
+
+contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
+	struct Vote {
+		uint32 index;
+		uint volume;
+	}
+	mapping (address => Vote) private _voters;
+	address[] private _addresses;
+
+	uint private _votingFee;
+	RESULT_TYPE[] private _candidates;
+
+	//filled at the time of voting deadline
+	uint32 private _truthIndex;
+	uint32 constant UNDECIDED = 0xFFFFFFFF;
+	uint[] private _refundList;
+	uint private _finalVoteVolume;
+	uint private _refundFraction;
+
+	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
+
+	constructor(address cashier, address regulation, uint open_time, uint duration_min) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, open_time, duration_min) {
+		_truthIndex = UNDECIDED;
+	}
+
+	function ownerSupplyBody(uint coin) internal {
+		_votingFee += coin;
+	}
+	function votingFee() public view returns(uint) {
+		return _votingFee;
+	}
+	function verifyContent(bytes8 c) public view returns(bool) {
+		return _regulation.verifyVotingContent(c);
+	}
+	function betBody(address from, bytes8 content, uint coin) internal {
+		vote(from, content, coin);
+	}
+
+	function vote(address from, RESULT_TYPE content, uint volume) private {
+		if(from!=getOwner() && !voteAcceptable()) //voting owner can vote any time to protect from malicious voting
+			ERROR_CASE("voting is not acceptable")
+		if(_closed)
+			ERROR_CASE("voting is already closed")
+		
+		uint32 index = findOrCreate(content);
+		Vote storage ch = _voters[from];
+		bool new_voter = ch.volume==0;
+		// in case of multiple votes, the last vote content is valid. volume is total votes.
+		ch.index = index;
+		uint current_volume = ch.volume;
+		ch.volume = current_volume + volume;
+		if(ch.volume < current_volume)
+			ERROR_CASE("overflow")
+			
+		if(new_voter) _addresses.push(from); 
+
+		emit Voted(from, content, volume);
+	}
+
+	function findOrCreate(RESULT_TYPE content) private returns(uint32) {
+		for(uint i=0; i<_candidates.length; i++) {
+			RESULT_TYPE ch = _candidates[i];
+			if(content==ch)
+				return uint32(i);
+		}
+		_candidates.push(content);
+		return uint32(_candidates.length-1);
+	}
+
+	function currentVotingList() public view returns(uint[] ) {
+		uint[] memory volumes = new uint[](_candidates.length);
+		for(uint i=0; i<_addresses.length; i++) {
+			address a = _addresses[i];
+			volumes[i] += _voters[a].volume;
+		}
+		return volumes;
+	}
+	// bytes[] is not allowed by solidity compiler. then use fixed size instead.
+	function candidateList() public view returns(RESULT_TYPE[] memory) {
+		return _candidates;
+/*
+		RESULT_TYPE[] memory candidates = new RESULT_TYPE[](_candidates.length);
+		for(uint i=0; i<_candidates.length; i++) {
+			candidates[i] = _candidates[i];
+		}
+		return candidates;
+*/
+	}
+
+	//Close Voting
+	function close() public onlyOwner {
+		if(getNow() < _closeTime)
+			ERROR_CASE("current time is before voting close time")
+		if(_closed)
+			ERROR_CASE("voting is already closed")
+
+		uint32 max_index = 0;
+		uint max = 0;
+		uint total = 0;
+		uint i;
+		address a;
+
+		uint[] memory volumes = new uint[](_candidates.length);
+		for(i=0; i<_addresses.length; i++) {
+			a = _addresses[i];
+			volumes[i] += _voters[a].volume;
+		}
+
+		for(i=0; i<volumes.length; i++) {
+			if(max < volumes[i]) {
+				max = volumes[i];
+				max_index = uint32(i);
+			}
+			total += volumes[i];
+		}
+		_finalVoteVolume = total;
+		_truthIndex = max_index;
+
+		uint fv = _finalVoteVolume + _votingFee;
+		uint cv = volumes[_truthIndex];
+		uint fraction = 0;
+		for(i=0; i<_addresses.length; i++) {
+			a = _addresses[i];
+			uint reward = 0;
+			if(_voters[a].index == _truthIndex) {
+				reward = fv * _voters[a].volume / cv;
+				fraction += (fv * _voters[a].volume) % cv;
+			}
+			_refundList.push(reward);
+		}
+
+		_refundFraction = fraction;
+		_cashier.multiTransferCoin(_addresses, _refundList);
+		_cashier.transferCoin(getOwner(), _refundFraction);
+		_closed = true;
+
+		emit Closed(this.truth());
+	}
+
+	function voterCount() public view returns(uint) {
+		return _addresses.length;
+	}
+	function refundTuple() public view returns(address[] a, uint[] v, uint f) {
+		if(_truthIndex==UNDECIDED) revert();
+		return (_addresses, _refundList, _refundFraction);
+	}
+	function truth() public view returns(RESULT_TYPE) {
+		if(_truthIndex==UNDECIDED)
+			return -1;
+		else
+			return _candidates[_truthIndex];
+	}
+
+
+
+}

@@ -1,0 +1,243 @@
+pragma solidity ^0.4.0;
+import './BentenContractBase.sol';
+import './BettingTarget_V8.sol';
+import './BettingTarget_V16.sol';
+import './ICoinCashier.sol';
+
+contract CoinCashier is BentenContractBase, ICoinCashier  {
+	string public name;
+	uint internal _issuedVolume;
+	uint internal _poolVolume;
+	address[] internal _addresses;
+	address[] internal _borrowers;
+
+	mapping (address => Account) internal _balances;
+	mapping (address => Account) internal _loans;
+	bool private _open;
+	bool private _allowAdditionalIssue;
+
+	event Deposit(address indexed account, uint amount);
+	event Withdraw(address indexed account, uint amount);
+	event TransferCoin(address indexed from, address indexed to, uint amount);
+
+	struct Account {
+		uint coin;
+	}
+
+	constructor(string name_, uint initialIssue, bool allowAdditionalIssue) public {
+		name = name_;
+		_issuedVolume = initialIssue;
+		_poolVolume = initialIssue;
+		_allowAdditionalIssue = allowAdditionalIssue;
+		_open = true;
+	}
+	function setOpen(bool open) onlyOwner public {
+		_open = open;
+	}
+	function isOpen() public view returns(bool) {
+		return _open;
+	}
+	function additionalIssueAllowed() public view returns(bool) {
+		return _allowAdditionalIssue;
+	}
+	function poolVolume() public view returns(uint) {
+		return _poolVolume;
+	}
+	function balanceOf(address a) public view returns(uint) {
+		return _balances[a].coin;
+	}
+
+	function addIssue(uint value) public onlyOwner {
+		if(!_allowAdditionalIssue)
+			ERROR_CASE("!_allowAdditionalIssue")
+		_issuedVolume += value;
+		_poolVolume += value;
+	}
+
+	//list all balances
+	function balanceList() public view onlyOwner returns(address[], uint[] )  {
+		address[] memory ad = new address[](_addresses.length);
+		uint[] memory vol = new uint[](_addresses.length);
+		for(uint i=0; i<_addresses.length; i++) {
+			ad[i] = _addresses[i];
+			vol[i] = _balances[ad[i]].coin;
+		}
+		return (ad, vol);
+	}
+	
+	function deposit() payable external {
+		uint amount = msg.value;
+		uint coin = amount;
+		// amount / coin rate may be change
+		if(!_open)
+			ERROR_CASE("cashier is not open")
+		if(_poolVolume < coin)
+			ERROR_CASE("pool is insufficient")
+
+		Account storage acc = _balances[msg.sender];
+		if(acc.coin==0) _addresses.push(msg.sender);
+
+		acc.coin += coin;
+		_poolVolume -= coin;
+		_balances[msg.sender] = acc;
+		emit Deposit(msg.sender, coin);
+	}
+
+	function withdraw(uint coin) public {
+		if(!_open)
+			ERROR_CASE("cashier is not open")
+		address u = msg.sender;
+		Account storage acc = _balances[u];
+		if(acc.coin < coin)
+			ERROR_CASE("coin is insufficient")
+
+		uint amount = coin;
+		u.call.value(amount)(); //sending eth
+		acc.coin -= coin;
+		_poolVolume += coin;
+		if(acc.coin==0) {
+			delete _balances[u];
+		}
+		else
+			_balances[u] = acc;
+		emit Withdraw(u, coin);
+	}
+
+	//list all loans
+	function loanList() public view onlyOwner returns(address[], uint[] )  {
+		address[] memory ad = new address[](_borrowers.length);
+		uint[] memory vol = new uint[](_borrowers.length);
+		for(uint i=0; i<_borrowers.length; i++) {
+			ad[i] = _borrowers[i];
+			vol[i] = _loans[ad[i]].coin;
+		}
+		return (ad, vol);
+	}
+
+	//lend / repay feature: primarily used by game owner
+	function lendLoan(address to, uint coin) external onlyOwner {
+		// amount / coin rate may be change
+		if(!_open)
+			ERROR_CASE("cashier is not open")
+		if(_poolVolume < coin)
+			ERROR_CASE("pool is insufficient")
+
+		Account storage loan = _loans[to];
+		if(loan.coin==0) _borrowers.push(to);
+
+		loan.coin += coin;
+		_poolVolume -= coin;
+		_loans[to] = loan;
+
+		Account storage b = _balances[to];
+		b.coin += coin;
+		_balances[to] = b;
+	}
+
+	function repayLoan(uint coin) public {
+		if(!_open)
+			ERROR_CASE("cashier is not open")
+		address u = msg.sender;
+		Account storage b = _balances[u];
+		if(b.coin < coin)
+			ERROR_CASE("coin is insufficient")
+		Account storage l = _loans[u];
+		if(l.coin < coin)
+			ERROR_CASE("repay amount > loan balance")
+
+		b.coin -= coin;
+		if(b.coin==0) {
+			delete _balances[u];
+		}
+		else
+			_balances[u] = b;
+
+		l.coin -= coin;
+		if(l.coin==0) {
+			delete _loans[u];
+		}
+		else
+			_loans[u] = l;
+
+		_poolVolume += coin;
+	}
+
+	//return
+	function transferCoin(address from, address to, uint coin) private {
+		if(!_open)
+			ERROR_CASE("cashier is not open")
+		if(coin==0) return;
+
+		Account storage src = _balances[from];
+		if(src.coin < coin)
+			ERROR_CASE("coin is insufficient")
+		Account storage dst = _balances[to];
+		if(dst.coin==0) _addresses.push(to);
+		src.coin -= coin;
+		dst.coin += coin;
+		emit TransferCoin(from, to, coin);
+	}
+
+	//single transfer
+	function transferCoin(address to, uint coin) public {
+		transferCoin(msg.sender, to, coin);
+	}
+	
+	//bulk transfer
+	function multiTransferCoin(address[] to, uint[] coin) public {
+		require(to.length==coin.length);
+		uint i;
+		uint total = 0;
+		for(i=0; i<coin.length; i++) {
+			uint m = total;
+			total += coin[i];
+			//uint overflow check
+			if(m > total)
+				ERROR_CASE("overflow on multipleTransfer!")
+		}
+		if(total > balanceOf(msg.sender))
+			ERROR_CASE("total balance is insufficient")
+
+		for(i=0; i<coin.length; i++)
+			transferCoin(msg.sender, to[i], coin[i]);
+
+	}
+
+	//Betting or Voting Root Function
+
+	//  only coin owner can call BettingTarget through this CoinCashier
+	function bet8(address target, bytes8 content, uint coin) public {
+		BettingTarget_V8 b = BettingTarget_V8(target);
+		transferCoin(msg.sender, target, coin); //private method: modify internal storage, only msg.sender pay coin to other
+		// BettingTarget.bet() accepts only if the caller is CoinCashier
+		b.bet(msg.sender, content, coin);
+	}
+
+	//bytes16 version
+	function bet16(address target, bytes16 content, uint coin) public {
+		BettingTarget_V16 b = BettingTarget_V16(target);
+		transferCoin(msg.sender, target, coin);
+		// BettingTarget.bet() accepts only if the caller is CoinCashier
+		b.bet(msg.sender, content, coin);
+	}
+
+	//Game Owner Supply
+	function ownerSupply(address target, uint coin) public {
+		BettingTarget_V8 b = BettingTarget_V8(target);
+		if(b.getOwner() != msg.sender) 
+			ERROR_CASE("Only game/voting owner can call ownerSupply")
+		transferCoin(msg.sender, target, coin);
+		// BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
+		b.ownerSupply(coin);
+	}
+
+	function isContract(address addr) private view returns (bool is_contract) {
+		uint length;
+		assembly {
+			//retrieve the size of the code on target address, this needs assembly
+			length := extcodesize(addr)
+		}
+		return (length>0);
+	}
+
+}

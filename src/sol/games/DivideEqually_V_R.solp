@@ -1,0 +1,34 @@
+pragma solidity ^0.4.0;
+import "../FixedOddsGame_V8_R8.sol";
+import "../FixedOddsGame_V16_R8.sol";
+
+// A lottery that the winners take all bettings in proportion to their bettings
+contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
+
+	uint private _gameOwnerSharePermil; // game owner takes constant rate of all bettings
+
+	constructor(address cashier, address voting, address regulation, uint open_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(cashier, voting, regulation, open_time, allow_cancel) {
+	}
+
+	function setGameOwnerSharePermil(uint value) public onlyOwner {
+		_gameOwnerSharePermil = value;
+	}
+	function gameOwnerSharePermil() public view returns(uint) {
+		return _gameOwnerSharePermil;
+	}
+
+	function calculateRefund(VOTE_TYPE content, RESULT_TYPE truth, uint volume) public view returns(uint) {
+		if(content!=truth) return 0; //losers
+
+		uint total = _totalBettings;
+		uint32 index = findEntryIndex(truth);
+		if(index==0xFFFFFFFF) return 0;
+
+		uint winners = _bettings[index].volume;
+		//TODO overflow check
+		uint owner_share = total * _gameOwnerSharePermil / 1000;
+		return (total - owner_share) * volume / winners;
+	}
+
+
+}

@@ -1,0 +1,59 @@
+pragma solidity ^0.4.0;
+import "./CoinCashier.sol";
+import "./IRegulation.sol";
+import "./ResultAnnouncement_R8.sol";
+
+contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE {   
+	address[] internal _addresses;
+	uint internal _ownerSupply;
+
+	ResultAnnouncement_R ##RESULT_SIZE	 internal _resultSource;
+	IRegulation internal _regulation;
+	uint internal _openTime;
+	bool internal _closed;
+	// cancel option
+	bool internal _allowCancel;
+	bool internal _cancelled;
+
+	event Entried(address indexed user, VOTE_TYPE content, uint volume);
+	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
+	event Cancelled(uint userCount, uint totalBetting, uint totalRefund);
+
+	constructor(address cashier, address result_src, address regulation, uint open_time) public {
+		_cashier = CoinCashier(cashier);
+		_resultSource = ResultAnnouncement_R ##RESULT_SIZE(result_src);
+		_regulation = IRegulation(regulation);
+		_openTime = open_time;
+	}
+	function openTime() public view returns(uint) {
+		return _openTime;
+	}
+	function isClosed() public view returns(bool) {
+		return _closed;
+	}
+	function cancelAllowed() public view returns(bool) {
+		return _allowCancel;
+	}
+	function cancelled() public view returns(bool) {
+		return _cancelled;
+	}
+	function betAcceptable() public view returns(bool) {
+		return _openTime <= getNow() && _resultSource.beforeOpen();
+	}
+	function ownerSupplyBody(uint coin) internal {
+		_ownerSupply += coin;
+	}
+	function regulation() public view returns(address) {
+		return _regulation;
+	}
+	function getOwnerSupply() public view onlyOwner returns(uint) {
+		return _ownerSupply;
+	}
+
+	function verifyContent(VOTE_TYPE c) public view returns(bool) {
+		return _regulation.verifyBetContent(c);
+	}
+
+
+
+}

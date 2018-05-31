@@ -1,0 +1,186 @@
+pragma solidity ^0.4.0;
+import "./CoinCashier.sol";
+import "./IRegulation.sol";
+import "./GameBase_V8_R8.sol";
+import "./GameBase_V16_R8.sol";
+
+contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE  {
+	struct Entry {
+		VOTE_TYPE content;
+		uint volume; 
+	}
+	mapping (address => Entry[]) internal _entries;
+	address[] internal _addresses;
+	uint[] internal _refunds;
+	uint internal _totalRefunds;
+	uint internal _totalBettings;
+	Entry[] internal _bettings;
+
+
+	constructor(address cashier, address voting, address regulation, uint open_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(cashier, voting, regulation, open_time) {
+		_allowCancel = allow_cancel;
+	}
+
+	function betBody(address from, VOTE_TYPE content, uint coin) internal {
+		if(!betAcceptable()) 
+			ERROR_CASE("betting not acceptable")
+
+		entry(from, content, coin);
+	}
+
+	function entry(address from, VOTE_TYPE content, uint volume) private {
+		Entry[] storage e = _entries[from];
+		bool new_entry = e.length==0;
+		if(new_entry) _addresses.push(from);
+		e.push(Entry(content, volume));
+
+		uint32 index = findOrCreate(content);
+		_bettings[index].volume += volume;
+		_totalBettings += volume;
+
+		emit Entried(msg.sender, content, volume);
+	}
+	function totalBettings() public view returns(uint) {
+		return _totalBettings;
+	}
+	function totalRefunds() public view returns(uint) {
+		require(_closed);
+		return _totalRefunds;
+	}
+
+	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
+		Entry[] storage e = _entries[msg.sender];
+		VOTE_TYPE[] memory b = new VOTE_TYPE[](e.length);
+		uint[] memory v = new uint[](e.length);
+		for(uint i=0; i<e.length; i++) {
+			b[i] = e[i].content;
+			v[i] = e[i].volume;
+		}
+		return (b, v);
+	}
+
+	function currentBettingList() public view returns(VOTE_TYPE[], uint[] ) {
+		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_bettings.length);
+		uint[] memory volumes = new uint[](_bettings.length);
+		for(uint i=0; i<_bettings.length; i++) {
+			Entry storage e = _bettings[i];
+			candidates[i] = e.content;
+			volumes[i] = e.volume;
+		}
+		return (candidates, volumes);
+	}
+/*
+	function currentBettingAndEstimatedRefundList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
+		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_bettings.length);
+		uint[] memory volumes = new uint[](_bettings.length);
+		uint[] memory refunds = new uint[](_bettings.length);
+		for(uint i=0; i<_bettings.length; i++) {
+			Entry storage e = _bettings[i];
+			candidates[i] = e.content;
+			volumes[i] = e.volume;
+			refunds[i] = this.estimateTotalRefund(e.content);
+		}
+		return (candidates, volumes, refunds);
+	}
+*/
+	function findOrCreate(VOTE_TYPE content) internal returns(uint32) {
+		for(uint i=0; i<_bettings.length; i++) {
+			if(content == _bettings[i].content)
+				return uint32(i);
+		}
+		_bettings.push(Entry(content, 0));
+		return uint32(_bettings.length-1);
+	}
+	function findEntryIndex(VOTE_TYPE content) internal view returns(uint32) {
+		for(uint i=0; i<_bettings.length; i++) {
+			if(content == _bettings[i].content)
+				return uint32(i);
+		}
+		return 0xFFFFFFFF;
+	}
+
+	//Derived class must implement
+	function calculateRefund(VOTE_TYPE content, RESULT_TYPE truth, uint volume) public view returns(uint);
+
+	function estimateTotalRefund(RESULT_TYPE truth) public view returns(uint) {
+		uint total_refund = 0;
+		for(uint i=0; i<_addresses.length; i++) {
+			address a = _addresses[i];
+			Entry[] storage e = _entries[a];
+			for(uint j=0; j<e.length; j++) {
+				Entry storage ee = e[j];
+				if(ee.volume!=0)
+					total_refund += calculateRefund(ee.content, truth, ee.volume);
+			}
+		}
+		return total_refund;
+	}
+
+	//Close Voting
+	function close() public onlyOwner {
+		if(!_resultSource.isClosed())
+			ERROR_CASE("voting address is not closed")
+		if(_cancelled)
+			ERROR_CASE("game is already cancelled")
+		if(_closed)
+			ERROR_CASE("game is already closed")
+
+		uint i;
+		address a;
+		RESULT_TYPE truth = _resultSource.truth(); //get correct answer
+		_totalRefunds = estimateTotalRefund(truth);
+
+		if(_totalRefunds > _totalBettings + _ownerSupply) 
+			ERROR_CASE("owner supply is insufficient")
+
+		for(i=0; i<_addresses.length; i++) {
+			a = _addresses[i];
+			Entry[] storage e = _entries[a];
+			uint refund = 0;
+			for(uint j=0; j<e.length; j++) {
+				Entry storage ee = e[j];
+				refund += calculateRefund(ee.content, truth, ee.volume);
+			}
+			if(refund>0)
+				_cashier.transferCoin(a, refund);
+			_refunds.push(refund);
+		}
+		
+		//remaining coin go to the owner of this game
+		_cashier.transferCoin(this.getOwner(), _totalBettings + _ownerSupply - _totalRefunds);
+		_closed = true;
+
+		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
+	}
+
+	function cancelGame() public onlyOwner {
+		if(_closed)
+			ERROR_CASE("game is already closed")
+		if(_cancelled)
+			ERROR_CASE("game is already cancelled")
+		if(!_allowCancel)
+			ERROR_CASE("cancel is not allowed")
+
+		_totalRefunds = 0;
+		for(uint i=0; i<_addresses.length; i++) {
+			address a = _addresses[i];
+			Entry[] storage e = _entries[a];
+			uint refund = 0;
+			for(uint j=0; j<e.length; j++) {
+				refund += e[j].volume;
+			}
+			if(refund>0)
+				_cashier.transferCoin(a, refund);
+			_refunds.push(refund);
+			_totalRefunds += refund;
+		}
+		
+		if(_ownerSupply>0)
+			_cashier.transferCoin(this.getOwner(), _ownerSupply);
+		_cancelled = true;
+
+		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
+	}
+
+
+}
