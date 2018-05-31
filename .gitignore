@@ -24,6 +24,8 @@ bld/
 [Bb]uild/
 [Cc]onctracts/
 [Tt]emp
+unused/
+contracts/
 
 # Visual Studio 2015 cache/options directory
 .vs/
