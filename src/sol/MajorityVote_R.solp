@@ -82,13 +82,6 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	// bytes[] is not allowed by solidity compiler. then use fixed size instead.
 	function candidateList() public view returns(RESULT_TYPE[] memory) {
 		return _candidates;
-/*
-		RESULT_TYPE[] memory candidates = new RESULT_TYPE[](_candidates.length);
-		for(uint i=0; i<_candidates.length; i++) {
-			candidates[i] = _candidates[i];
-		}
-		return candidates;
-*/
 	}
 
 	//Close Voting

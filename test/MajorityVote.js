@@ -16,7 +16,8 @@ contract('MajorityVote', function(accounts) {
 	var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.address, now, 10, {from:a0});
     var vote_handler = truffle_event.extractor(MajorityVote.abi, "Voted");
-    
+    var closed_handler = truffle_event.extractor(MajorityVote.abi, "Closed");
+
     assert.equal((await voting.openTime()).toNumber(), now);
     assert.equal(await voting.closeTime(), now + 10*60); //10 minutes = 600 seconds
     await cashier.deposit({from:a0, value:1000});
@@ -29,8 +30,13 @@ contract('MajorityVote', function(accounts) {
     assert.equal(web3.eth.getBalance(cashier.address), 2500);
     console.log("Step1 "+(await voting.candidateList()));
     
-    var v0 = await cashier.bet8(voting.address, c0, 100, {from:a0});
-    var v1 = await cashier.bet8(voting.address, c0, 100, {from:a1});
+    vote_handler.(await cashier.bet8(voting.address, c0, 100, { from: a0 }), function (from, content, volume) {
+        assert.equal(a0, from);
+        assert.equal(content, c0);
+        assert.equal(volume, 100);
+    });
+    var v1 = await cashier.bet8(voting.address, c0, 100, { from: a1 });
+    
     //2nd vote from a1
     v1 = await cashier.bet8(voting.address, c1, 100, {from:a1});
     
@@ -41,7 +47,9 @@ contract('MajorityVote', function(accounts) {
     console.log("      "+(await voting.currentVotingList()));
 
     await voting.setNow(now + 800);
-    await voting.close( {from:a0});
+    closed_handler(await voting.close({ from: a0 }), function (truth) {
+        assert.equal(truth, "c1");
+    });
     console.log("Step3 truth="+(await voting.truth()));
     
     var refunds = await voting.refundTuple();
