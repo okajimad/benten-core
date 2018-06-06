@@ -1,0 +1,51 @@
+pragma solidity ^0.4.0;
+import "../FixedOddsGame_V8_R8.sol";
+import "../FixedOddsGame_V16_R8.sol";
+import "../Random.sol";
+
+// A lottery that the winners take all bettings in proportion to their bettings
+contract ShuffleLottery_V ##VOTE_SIZE _R8	 is FixedOddsGame_V ##VOTE_SIZE _R8  {
+
+	uint private _payoutPermil; // game owner takes constant rate of all bettings
+	Random private _random;
+	VOTE_TYPE[] private _tickets;
+	int private _usedTicket;
+
+	constructor(address cashier, address voting, address regulation, uint open_time, bool allow_cancel, uint ticket_count) public FixedOddsGame_V ##VOTE_SIZE _R8 (cashier, voting, regulation, open_time, allow_cancel) {
+		_payoutPermil = 1000;
+		_random = new Random(uint128(now));
+		_tickets = new VOTE_TYPE[](ticket_count);
+		for(uint i=0; i<ticket_count; i++)
+			_tickets[i] = VOTE_TYPE(i);
+	}
+	function shuffle() public onlyOwner {
+		// Fisher–Yates algorithm
+		uint n = _tickets.length;
+		for(uint i=n-1; i>0; i--) {
+			_random.nextUint32();
+			uint j = _random.get() % (i+1);
+			VOTE_TYPE tmp = _tickets[i];
+			_tickets[i] = _tickets[j];
+			_tickets[j] = tmp;
+		}
+	}
+	function getTickets() public view returns(VOTE_TYPE[]) {
+		return _tickets;
+	}
+
+	function setPayoutPermil(uint value) public onlyOwner {
+		_payoutPermil = value;
+	}
+	function payoutPermil() public view returns(uint) {
+		return _payoutPermil;
+	}
+
+	function calculateRefund(VOTE_TYPE content, bytes8 truth, uint volume) public view returns(uint) {
+		if(content!=truth) return 0; //losers
+
+		//TODO overflow check
+		return volume * _payoutPermil / 1000;
+	}
+
+
+}

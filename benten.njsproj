@@ -16,10 +16,6 @@
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'" />
   <PropertyGroup Condition="'$(Configuration)' == 'Release'" />
   <ItemGroup>
-    <Content Include="augurを読む.txt" />
-    <Content Include="debug_solidity.txt" />
-    <Content Include="geth.txt" />
-    <Content Include="note.txt" />
     <Content Include="package-lock.json" />
     <Content Include="package.json" />
     <Compile Include="mochatest\preprocessor.js" />
