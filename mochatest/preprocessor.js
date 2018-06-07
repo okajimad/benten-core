@@ -4,13 +4,6 @@ const prep = require('../src/tools/preprocessor');
 var assert = require('assert');
 
 describe('prep', function() {
-  describe('op', function() {
-    it('divide not work?', function() {
-      var defs = {"A":10};
-      var r = prep.preprocess("reward = fv * _voters[a].volume / cv;", defs);
-      assert.equal(r.join(""), "10 / x");
-    });
-  });
   describe('1', function() {
     it('simple macro', function() {
       var defs = {"A":10};
@@ -30,6 +23,13 @@ describe('prep', function() {
       var defs = {"T": 8, "S":16};
       var r = prep.preprocess("x = X ##T _ ##S ;", defs);
       assert.equal(r.join(""), "x = X8_16;");
+    });
+  });
+  describe('4', function() {
+    it('stringizing', function() {
+      var defs = {"T": 8, "S":16};
+      var r = prep.preprocess("x = #T; y = 'A_#S_#T';", defs);
+      assert.equal(r.join(""), "x = \"8\"; y = 'A_16_8';");
     });
   });
 });

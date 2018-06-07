@@ -102,6 +102,14 @@ function apply_macro(m, args) {
   return result;
 }
 
+function remove_last_whitespaces(arr) {
+            //removed prev whitespaces
+            var last = arr[arr.length-1];
+            while(is_space(last)) {
+              arr.pop();
+              last = arr[arr.length-1];
+            }
+}
 
 exports.preprocess = function(source, defines) {
     var if_stack = [];
@@ -158,20 +166,30 @@ exports.preprocess = function(source, defines) {
           c++;
       }
   }
+  function check_quote(v) {
+    //apply #XXX style macro
+    if(v.indexOf('#')==-1) return v; //easy case
+    
+    for(var k in defines) {
+      var e = defines[k];
+      v = v.replace("#"+k, e);
+    }
+    return v;
+  }
   var c = 0;
   var result = [];
-  const newline = "\r\n";
   
   while(c < tokens.length) {
       var t = tokens[c];
       var ty = t.type;
       var tv = source.substring(t.begin, t.end);
       if (ty == "directive") {
-          if (tv == "#define")
+          tv = tv.substring(1); //remove '#'
+          if (tv == "define")
               c = next2tok(c + 1, function (k, v) { defines[k] = v });
-          else if (tv == "#undef")
+          else if (tv == "undef")
               c = next1tok(c + 1, function (k) { defines[k] = null });
-          else if (tv == "#if") {
+          else if (tv == "if") {
               var neg = false;
               function if_branch(v) {
                   var val = defines[v]? true : false;
@@ -187,16 +205,22 @@ exports.preprocess = function(source, defines) {
                       if_branch(v);
               });
           }
-          else if (tv == "#else") {
+          else if (tv == "else") {
               if_stack[if_stack.length - 1] = !if_stack[if_stack.length - 1]
               c++;
           }
-          else if (tv == "#endif") {
+          else if (tv == "endif") {
               if_stack.pop();
               c++;
           }
+          else if(defines[tv]) {
+            if(if_stack_enabled()) {
+              result.push('"'+defines[tv]+'"'); //stringizing
+              c++;
+            }
+          }
           else
-              throw "unknown directive " + tv;
+            throw "unknown directive " + tv;
       }
       else if(ty=="identifier") {
           if(if_stack_enabled()) {
@@ -218,12 +242,7 @@ exports.preprocess = function(source, defines) {
       }
       else if(ty=="token concat") {
         if(if_stack_enabled()) {
-            //removed prev whitespaces
-            var last = result[result.length-1];
-            while(is_space(last)) {
-              result.pop();
-              last = result[result.length-1];
-            }
+        	remove_last_whitespaces(result);
             var n = tv.substring(2);
             result.push(defines[n]); // get after "##"
             c++;
@@ -232,6 +251,10 @@ exports.preprocess = function(source, defines) {
               c++;
             }
         }
+      }
+      else if(ty=="quote") {
+        if(if_stack_enabled()) result.push(check_quote(tv));
+         c++;
       }
       else {
           if (if_stack_enabled() || is_newline(tv)) //preserve newline to hold line number. solc may output compile error
