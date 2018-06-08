@@ -4,11 +4,9 @@ import './BentenContractBase.sol';
 import './ICoinCashier.sol';
 import './IRegulation.sol';
 
-//byteN version
 contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 	ICoinCashier internal _cashier;
 	IRegulation internal _regulation;
-////
 	
 	function verifyContent(VOTE_TYPE content) public view returns(bool);
 	function betBody(address sender, VOTE_TYPE content, uint coin) internal;

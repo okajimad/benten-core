@@ -1,8 +1,7 @@
 pragma solidity ^0.4.0;
 import "./CoinCashier.sol";
 import "./IRegulation.sol";
-import "./GameBase_V8_R8.sol";
-import "./GameBase_V16_R8.sol";
+import "./GameBase_V#VOTE_SIZE_R#RESULT_SIZE.sol";
 
 contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE  {
 	struct Entry {

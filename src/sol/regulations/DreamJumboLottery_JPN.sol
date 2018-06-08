@@ -45,16 +45,11 @@ contract DreamJumboLottery_JPN is IRegulation {
       return Result.None;
     }
 
-	function verifyVotingContent(bytes8 ) external view returns(bool) {
+	function verifyVotingContent(bytes8 ) external pure returns(bool) {
 	  return true;
 	}
-	function verifyBetContent(bytes8 ) external view returns(bool) {
+	function verifyBetContent(bytes8 ) external pure returns(bool) {
 	return true;
 	}
-
-
-	/*function calculateRefund(bytes8 , bytes8, uint volume) external view returns(uint) {
-	return 0;
-	}*/
 
 }

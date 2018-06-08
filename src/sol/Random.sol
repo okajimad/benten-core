@@ -1,4 +1,6 @@
 pragma solidity ^0.4.0;
+import "./Migrations.sol";
+
 
 //XORSHIFT algorithm
 contract Random {
@@ -7,7 +9,7 @@ contract Random {
   uint32 private _z;
   uint32 private _w;
 
-  constructor(uint128 seed) {
+  constructor(uint128 seed) public {
     _x = uint32((seed & 0xFFFFFFFF000000000000000000000000) >> 96);
     _y = uint32((seed & 0x00000000FFFFFFFF0000000000000000) >> 64);
     _z = uint32((seed & 0x0000000000000000FFFFFFFF00000000) >> 32);

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.0;
 
 import "./ICoinCashier.sol";
-import "./ResultAnnouncement_R8.sol";
+import "./ResultAnnouncement_R#RESULT_SIZE.sol";
 
 contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	struct Vote {

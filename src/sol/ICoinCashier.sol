@@ -14,6 +14,7 @@ interface ICoinCashier {
 	//single transfer
 	function transferCoin(address to, uint coin) external;
 	//bulk transfer
-	// if we modify multiTransferCoin to 'eternal' method, solidity compiler generates error...?
+	// if we modify multiTransferCoin to 'eternal' method, solidity compiler generates error.
+	// variable-length array seems to be prohibited in external methods.
 	function multiTransferCoin(address[] to, uint[] coin) public;
 }

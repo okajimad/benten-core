@@ -92,7 +92,9 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 			ERROR_CASE("coin is insufficient")
 
 		uint amount = coin;
-		u.call.value(amount)(); //sending eth
+		// if this transfer fails, an exception is thrown.
+		// you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
+		u.transfer(amount); //sending eth
 		acc.coin -= coin;
 		_poolVolume += coin;
 		if(acc.coin==0) {

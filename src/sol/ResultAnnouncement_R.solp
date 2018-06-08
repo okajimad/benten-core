@@ -1,8 +1,7 @@
 pragma solidity ^0.4.0;
 
 import "./ICoinCashier.sol";
-import "./BettingTarget_V8.sol";
-import "./BettingTarget_V16.sol";
+import "./BettingTarget_V#RESULT_SIZE.sol";
 
 contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	uint internal _openTime;

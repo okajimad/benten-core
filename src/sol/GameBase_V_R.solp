@@ -1,7 +1,7 @@
 pragma solidity ^0.4.0;
 import "./CoinCashier.sol";
 import "./IRegulation.sol";
-import "./ResultAnnouncement_R8.sol";
+import "./ResultAnnouncement_R#RESULT_SIZE.sol";
 
 contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE {   
 	address[] internal _addresses;
