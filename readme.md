@@ -15,7 +15,6 @@ Gambling is targeting all events that are currently uncertain but will be fixed 
 
  Originally, gambling is a lot of fun if you participate with moderation, but gambling can not be done in many countries unless it is strictly regulated by the government. To separate this wonderful entertainment of gambling from under the control of the government and to guide it to the world based on the values ​​of freedom and democracy as if bit coin showed the possibility of separating currency issue right from the government I am aiming for.
 
-
 # How to build
 
     npm install -g truffle
@@ -36,5 +35,7 @@ Gambling is targeting all events that are currently uncertain but will be fixed 
 
  Test files are located in test directory.
 
+# Documentation
 
+ * [Benten preprocessor](doc/preprocessor.md) : Solidity development tool
 

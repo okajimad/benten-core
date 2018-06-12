@@ -216,7 +216,7 @@ Votingコントラクトに対し投票した履歴を保持する
  * コールドアドレスの登録機能も兼ねる。この場合はCashierに対してのごく簡単なトランザクション発行を伴う。
 
 #### WithdrawFromCashier
-    [入力] { ext_address:<eth_address> }
+    [入力] { ext_address:<eth_address>, amount:<amount> }
 
 * 外部アドレスにコインから換金したETHを送付
 * アドレスのデフォルト値はそのuserのext_addressフィールド
