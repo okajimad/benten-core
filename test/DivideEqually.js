@@ -74,7 +74,7 @@ contract('Basic games', function(accounts) {
     
     console.log("FINISH");
   });
-  it("SimpleLottery (with owner supply)", async function () {
+  it("ownerSupply", async function () {
       var cashier = await Cashier.new("test", 10000, false, { from: a0 });
       var reg = await Regulation.new({ from: a0 });
       var now = (await cashier.getNow()).toNumber();
@@ -147,6 +147,59 @@ contract('Basic games', function(accounts) {
       assert.equal(await cashier.balanceOf(a1), 2100); //a1 wins 700
       assert.equal(await cashier.balanceOf(voting.address), 0);
       assert.equal(await cashier.balanceOf(game.address), 0);
+
+      console.log("FINISH");
+  });
+  it("cancelGame", async function () {
+      var cashier = await Cashier.new("test", 10000, false, { from: a0 });
+      var reg = await Regulation.new({ from: a0 });
+      var now = (await cashier.getNow()).toNumber();
+      var voting = await MajorityVote.new(cashier.address, reg.address, now + 60, 10, { from: a0 });
+      var game = await SimpleLottery.new(cashier.address, voting.address, reg.address, now, true, { from: a0 });
+      game.setPayoutPermil(3000); //winner 3 takes 3 timers of their bets
+
+      var a0_initial_coin = 0;
+      var a1_initial_coin = 0;
+      await cashier.deposit({ from: a0, value: 1000 });
+      await cashier.deposit({ from: a1, value: 1500 });
+      await cashier.bet8(game.address, c0, 400, { from: a0 });
+      await cashier.bet8(game.address, c1, 300, { from: a1 })
+
+      assert.equal(await cashier.balanceOf(a0), 600);
+      assert.equal(await cashier.balanceOf(a1), 1200);
+      assert.equal(await cashier.balanceOf(voting.address), 0);
+      assert.equal(await cashier.balanceOf(game.address), 700);
+      var bettings = await game.currentBettingList();
+      //assert.equal(bettings[0][0], c0); //TODO conversion utility required
+      //assert.equal(bettings[0][1], c1);
+      assert.equal(bettings[1][0], 400);
+      assert.equal(bettings[1][1], 300);
+
+      //At this point:
+      // initial asset: a0:1000, a1:1500
+      // voting: 0
+      // game: c0,400(a0) c1,300(a1)
+
+      assert.equal(await game.estimateTotalRefund(c0, { from: a0 }), 1200);
+      assert.equal(await game.estimateTotalRefund(c1, { from: a0 }), 900);
+
+      await voting.setNow(now + 1000);
+      await game.setNow(now + 1000);
+      assert.equal(await game.betAcceptable(), false);
+      assert.equal(await game.isClosed(), false);
+      assert.equal(await voting.voteAcceptable(), false);
+      //cancel game
+      await game.cancelGame({from: a0});
+      assert.ok(await game.cancelled());
+      
+      //assert.equal(c1, await voting.truth()); //voting.truth() is converted to a string '0x61323232320000'!!
+      assert.equal(await cashier.balanceOf(a0), 1000);
+      assert.equal(await cashier.balanceOf(a1), 1500);
+      assert.equal(await cashier.balanceOf(voting.address), 0);
+      assert.equal(await cashier.balanceOf(game.address), 0);
+      assert.equal(await game.isClosed(), true);
+      assert.equal(await game.totalBettings(), 700);
+      assert.equal(await game.totalRefunds(), 700);
 
       console.log("FINISH");
   });

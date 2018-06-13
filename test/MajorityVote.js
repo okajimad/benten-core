@@ -2,8 +2,8 @@
 var truffle_event = require("../src/tools/truffle_event");
 
 var Cashier = artifacts.require("CoinCashier");
-var MajorityVote = artifacts.require("MajorityVote");
-var SimpleLottery = artifacts.require("SimpleLottery");
+var MajorityVote = artifacts.require("MajorityVote_R8");
+var Regulation = artifacts.require("DivideEquallyRegulation");
 
 contract('MajorityVote', function(accounts) {
   var a0 = accounts[0];
@@ -12,7 +12,7 @@ contract('MajorityVote', function(accounts) {
   var c1 = "a2222";
   it("vote1", async function() {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
-	var reg = await SimpleLottery.new({from:a0});
+	var reg = await Regulation.new({from:a0});
 	var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.address, now, 10, {from:a0});
     var vote_handler = truffle_event.extractor(MajorityVote.abi, "Voted");
@@ -30,7 +30,7 @@ contract('MajorityVote', function(accounts) {
     assert.equal(web3.eth.getBalance(cashier.address), 2500);
     console.log("Step1 "+(await voting.candidateList()));
     
-    vote_handler.(await cashier.bet8(voting.address, c0, 100, { from: a0 }), function (from, content, volume) {
+    vote_handler(await cashier.bet8(voting.address, c0, 100, { from: a0 }), function (from, content, volume) {
         assert.equal(a0, from);
         assert.equal(content, c0);
         assert.equal(volume, 100);
@@ -67,7 +67,7 @@ contract('MajorityVote', function(accounts) {
   });
   it("error_check", async function() {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
-	var reg = await SimpleLottery.new({from:a0});
+	var reg = await Regulation.new({from:a0});
 	var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.address, now, 10, {from:a0}); //cashier address is not ICoinCashier
     voting.setNow(now-100);

@@ -67,7 +67,7 @@ Therefore, we use the following macro like C.
     MY_TYPE private _value;
 
 
-## (3)  [#] と [##]
+## (3)  [#] and [##]
 
   In relation to this type definition, from one `solp` file, we may want to branch on the contents of the type and make it a different sol file.
 
