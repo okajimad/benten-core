@@ -64,8 +64,16 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 
 		emit Entried(msg.sender, content, volume);
 	}
+	function totalBettings() public view returns(uint) {
+		return _totalBettings;
+	}
+	function totalRefunds() public view returns(uint) {
+		require(_closed);
+		return _totalRefunds;
+	}
 
-	function getBetting() public view returns(VOTE_TYPE[], uint[]) {
+	//get bettings content of msg.sender
+	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
 		Entry[] storage e = _entries[msg.sender];
 		VOTE_TYPE[] memory b = new VOTE_TYPE[](e.length);
 		uint[] memory v = new uint[](e.length);
@@ -76,7 +84,8 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		return (b, v);
 	}
 
-	function getCurrentBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
+	// returns (contents, counts, volumes) tuple
+	function allBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
 		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_currentOdds.length);
 		uint i;
 		for(i=0; i<_currentOdds.length; i++)
@@ -132,7 +141,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	
 
 	//Close Voting
-	function close() public onlyOwner returns (uint) {
+	function close() public onlyOwner  {
 		if(!_resultSource.isClosed())
 			ERROR_CASE("voting address is not closed")
 		if(_cancelled)
@@ -143,7 +152,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		address a;
 		RESULT_TYPE truth = _resultSource.truth(); //get correct answer
 		_totalBettings = CoinCashier(_cashier).balanceOf(this);
-		_totalRefunds = this.estimateTotalRefund(truth);
+		_totalRefunds = estimateTotalRefund(truth);
 
 		if(_totalRefunds > _totalBettings + _ownerSupply) 
 			ERROR_CASE("supply is insufficient")
@@ -155,16 +164,19 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 				Entry storage m = e[j];
 				if(m.volume!=0) {
 					uint refund = calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
-					_cashier.transferCoin(a, refund);
+					if(refund > 0)
+						_cashier.transferCoin(a, refund);
 				}
 			}
 		}
 		
 		//remaining coin go to the owner of this game
 		_cashier.transferCoin(this.getOwner(), _totalBettings - _totalRefunds);
+		_closed = true;
 		
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
 	}
+
 
 	function cancelGame() public onlyOwner {
 		if(_closed)
@@ -197,7 +209,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 
 	function calculateRefundWithOdds(VOTE_TYPE content, RESULT_TYPE truth, uint odds, uint volume) public pure returns(uint) {
 		if(content==truth)
-			return volume * odds / 1000; //odds is permil
+			return volume * odds / 1000; //odds is permil, TODO overflow check
 		else
 			return 0;
 	}

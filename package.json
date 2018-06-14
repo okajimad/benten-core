@@ -8,7 +8,7 @@
     "compile": "npm run preprocess && truffle compile",
     "clean": "node src/tools/clean.js",
     "test": "mocha mochatest -g ",
-    "soltest": "truffle test -g ",
+    "soltest": "truffle test ",
     "tc": "truffle compile",
     "tm": "truffle migrate"
   },
