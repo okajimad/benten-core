@@ -1,6 +1,7 @@
 
 var truffle_event = require("../src/tools/truffle_event");
 var CoinCashier = artifacts.require("CoinCashier");
+var Random = artifacts.require("Random");
 
 contract('CoinCashier', function(accounts) {
   var a0 = accounts[0];
@@ -114,6 +115,17 @@ contract('CoinCashier', function(accounts) {
   	  await cashier.multiTransferCoin([a1,a2], [v0,0x20], {from:a0});
   	  assert.equal(await cashier.getLastError(), "overflow on multipleTransfer!");
   	  
+  });
+  it("trusted contract", async function() {
+      var cashier = await CoinCashier.new("test1", 10000, false, {from:a0});
+      await cashier.setVerifyBettingTargetContent(true);
+      var rnd1 = await Random.new(1, {from:a0});
+      var rnd2 = await Random.new(2, {from:a0});
+      //await cashier.hashContract(rnd1.address);
+      await cashier.addTrustedContract(rnd1.address, {from:a0});
+      assert.ok(await cashier.verifyTarget(rnd1.address));
+      assert.ok(await cashier.verifyTarget(rnd2.address)); // verifying result depends on the bytecodes, not the content of storage
+      assert.ok(!(await cashier.verifyTarget(cashier.address)));
   });
   
 });

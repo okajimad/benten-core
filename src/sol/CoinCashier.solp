@@ -15,6 +15,7 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 	mapping (address => Account) internal _loans;
 	bool private _open;
 	bool private _allowAdditionalIssue;
+	bool private _verifyBettingTargetContent;
 
 	event Deposit(address indexed account, uint amount);
 	event Withdraw(address indexed account, uint amount);
@@ -36,6 +37,12 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 	}
 	function isOpen() public view returns(bool) {
 		return _open;
+	}
+	function doesVerifyBettingTargetContent() public view returns(bool) {
+		return _verifyBettingTargetContent;
+	}
+	function setVerifyBettingTargetContent(bool v) onlyOwner public {
+		_verifyBettingTargetContent = v;
 	}
 	function additionalIssueAllowed() public view returns(bool) {
 		return _allowAdditionalIssue;
@@ -66,6 +73,9 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 	}
 	
 	function deposit() payable external {
+		if(isContract(msg.sender)) 
+			ERROR_CASE("any contracts cannot deposit")
+
 		uint amount = msg.value;
 		uint coin = amount;
 		// amount / coin rate may be change
@@ -217,6 +227,7 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 
 	//bytes16 version
 	function bet16(address target, bytes16 content, uint coin) public {
+		require(!_verifyBettingTargetContent || verifyTarget(target));
 		BettingTarget_V16 b = BettingTarget_V16(target);
 		transferCoin(msg.sender, target, coin);
 		// BettingTarget.bet() accepts only if the caller is CoinCashier
@@ -225,12 +236,26 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 
 	//Game Owner Supply
 	function ownerSupply(address target, uint coin) public {
+		require(!_verifyBettingTargetContent || verifyTarget(target));
 		BettingTarget_V8 b = BettingTarget_V8(target);
 		if(b.getOwner() != msg.sender) 
 			ERROR_CASE("Only game/voting owner can call ownerSupply")
 		transferCoin(msg.sender, target, coin);
 		// BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
 		b.ownerSupply(coin);
+	}
+
+	//Verify an address is trusted contract
+	function verifyTarget(address target) public view returns(bool) {
+		bytes32 h = hashContract(target);
+		for(uint i=0; i<_trustedHashes.length; i++) {
+			if(h == _trustedHashes[i]) return true;
+		}
+		return false;
+	}
+	bytes32[] internal _trustedHashes;
+	function addTrustedContract(address target) public onlyOwner {
+		_trustedHashes.push(hashContract(target));
 	}
 
 	function isContract(address addr) private view returns (bool is_contract) {
@@ -240,6 +265,18 @@ contract CoinCashier is BentenContractBase, ICoinCashier  {
 			length := extcodesize(addr)
 		}
 		return (length>0);
+	}
+	function hashContract(address addr) public view returns(bytes32) {
+		uint length;
+		assembly {
+			//retrieve the size of the code on target address, this needs assembly
+			length := extcodesize(addr)
+		}
+		bytes memory buf = new bytes(length);
+		assembly {
+			extcodecopy(addr, add(buf, 0x20), 0, length)
+		}
+		return sha256(buf);
 	}
 
 }
