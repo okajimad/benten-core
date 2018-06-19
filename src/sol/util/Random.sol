@@ -1,5 +1,4 @@
 pragma solidity ^0.4.0;
-import "./Migrations.sol";
 
 
 //XORSHIFT algorithm
