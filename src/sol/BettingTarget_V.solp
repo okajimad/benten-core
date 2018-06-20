@@ -8,7 +8,6 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 	ICoinCashier internal _cashier;
 	IRegulation internal _regulation;
 	
-	function verifyContent(VOTE_TYPE content) public view returns(bool);
 	function betBody(address sender, VOTE_TYPE content, uint coin) internal;
 	function ownerSupplyBody(uint coin) internal;
 
@@ -17,9 +16,6 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 		if(msg.sender != address(_cashier)) 
 			ERROR_CASE("betting source is not ICoinCashier")
 		
-		if(!verifyContent(content))
-			ERROR_CASE("mulformed betting content")
-
 		betBody(sender, content, coin);
 	}
 

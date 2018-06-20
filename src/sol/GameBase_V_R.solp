@@ -50,10 +50,6 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		return _ownerSupply;
 	}
 
-	function verifyContent(VOTE_TYPE c) public view returns(bool) {
-		return _regulation.verifyBetContent(c);
-	}
-
 
 
 }

@@ -138,6 +138,12 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		}
 		return total_refund;
 	}
+	function estimateTotalRefund_Multi(RESULT_TYPE[] truth_list) public view onlyOwner returns(uint[]) {
+		uint[] memory result = new uint[](truth_list.length);
+		for(uint i=0; i<truth_list.length; i++)
+			result[i] = estimateTotalRefund(truth_list[i]);
+		return result;
+	}
 	
 
 	//Close Voting

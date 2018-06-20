@@ -33,9 +33,6 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	function votingFee() public view returns(uint) {
 		return _votingFee;
 	}
-	function verifyContent(bytes8 c) public view returns(bool) {
-		return _regulation.verifyVotingContent(c);
-	}
 	function betBody(address from, bytes8 content, uint coin) internal {
 		vote(from, content, coin);
 	}
@@ -56,8 +53,8 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		if(ch.volume < current_volume)
 			ERROR_CASE("overflow")
 			
-		if(new_voter) _addresses.push(from); 
-
+		if(new_voter)
+			_addresses.push(from); 
 		emit Voted(from, content, volume);
 	}
 

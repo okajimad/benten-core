@@ -39,9 +39,6 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	function beforeOpen() public view returns(bool) {
 		return _openTime > getNow();
 	}
-	function verifyContent(bytes8 c) public view returns(bool) {
-		return _regulation.verifyVotingContent(c);
-	}
 	function truth() public view returns(RESULT_TYPE);
 
 }
