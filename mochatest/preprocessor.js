@@ -32,4 +32,11 @@ describe('prep', function() {
       assert.equal(r.join(""), "x = \"8\"; y = 'A_16_8';");
     });
   });
+  describe('5', function() {
+    it('ternary', function() {
+      var r = prep.preprocess("x = (y>5)? 0 : 1", null);
+      assert.equal(16, r.length);
+      assert.equal(r.join(""), "x = (y>5)? 0 : 1");
+    });
+  });
 });

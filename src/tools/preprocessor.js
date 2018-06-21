@@ -69,7 +69,7 @@ function c_style_token_defs() {
         { regex: /\]/g, name: 'close square' },
         { regex: /{/g, name: 'open curly' },
         { regex: /}/g, name: 'close curly' },
-        { regex: /([~!%^&*\/\=|.,:;]|->|<{1,2}|>{1,2}|\*{1,2}|\|{1,2}|&{1,2}|-{1,2}|\+{1,2}|[-+*|&%\/=]=)/g, name: 'operator' },
+        { regex: /([~!%^&*\/\=|.,:;\?]|->|<{1,2}|>{1,2}|\*{1,2}|\|{1,2}|&{1,2}|-{1,2}|\+{1,2}|[-+*|&%\/=]=)/g, name: 'operator' },
         { regex: /\\\n?/g, name: 'line continue' },
         { regex: /##([_A-Za-z]\w*)/g, name:'token concat' }
     ];
@@ -112,6 +112,8 @@ function remove_last_whitespaces(arr) {
 }
 
 exports.preprocess = function(source, defines) {
+    if(!defines) defines = {};
+	
     var if_stack = [];
     function if_stack_enabled() {
         for (var i in if_stack)
