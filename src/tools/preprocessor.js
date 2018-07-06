@@ -82,7 +82,7 @@ exports.tokenize = function tokenize(source) {
     var cursor = 0;
     while (cursor < source.length) {
         var tok = select_token_at(token_defs, cursor);
-        if (tok == null) break; //all null
+        if (tok == null) { throw "token not found / maybe it is syntax error in the source file"; }
 
         result.push({ "type": tok.name, "begin": tok.result.index, "end": tok.regex.lastIndex });
         cursor = tok.regex.lastIndex;
