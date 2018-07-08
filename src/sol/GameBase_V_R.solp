@@ -10,6 +10,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	ResultAnnouncement_R ##RESULT_SIZE	 internal _resultSource;
 	IRegulation internal _regulation;
 	uint internal _openTime;
+	uint internal _deadlineTime;
 	bool internal _closed;
 	// cancel option
 	bool internal _allowCancel;
@@ -19,14 +20,27 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
 	event Cancelled(uint userCount, uint totalBetting, uint totalRefund);
 
-	constructor(address cashier, address result_src, address regulation, uint open_time) public {
+	constructor(address cashier, address result_src, address regulation, uint open_time, uint deadline_time) public {
 		_cashier = CoinCashier(cashier);
 		_resultSource = ResultAnnouncement_R ##RESULT_SIZE(result_src);
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
+		_deadlineTime = deadline_time;
 	}
+	constructor(address cashier, address regulation, uint open_time, uint deadline_time, uint vote_open_time, uint vote_deadline_time) public {
+	ResultAnnouncement_R ##RESULT_SIZE
+		_cashier = CoinCashier(cashier);
+		_resultSource = new MajorityVoteResultAnnouncement_R ##RESULT_SIZE(result_src);
+		_regulation = IRegulation(regulation);
+		_openTime = open_time;
+		_deadlineTime = deadline_time;
+	}
+
 	function openTime() public view returns(uint) {
 		return _openTime;
+	}
+	function deadlineTime() public view returns(uint) {
+	    return  _deadlineTime;
 	}
 	function isClosed() public view returns(bool) {
 		return _closed;
@@ -38,7 +52,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		return _cancelled;
 	}
 	function betAcceptable() public view returns(bool) {
-		return _openTime <= getNow() && _resultSource.beforeOpen();
+		return _openTime <= getNow() && getNow() <= _deadlineTime;
 	}
 	function ownerSupplyBody(uint coin) internal {
 		_ownerSupply += coin;

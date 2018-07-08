@@ -5,17 +5,18 @@ import "./BettingTarget_V#RESULT_SIZE.sol";
 
 contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	uint internal _openTime;
-	uint internal _closeTime;
+	uint internal _deadlineTime;
 	bool internal _closed;
 
 	event Closed(RESULT_TYPE truth);
 
-	constructor(address cashier, address regulation, uint open_time, uint duration_min) public {
+	constructor(address cashier, address regulation, address owner, uint open_time, uint deadline_time) public {
 		_cashier = ICoinCashier(cashier);
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
-		_closeTime = open_time + (duration_min * 1 minutes);
+		_deadlineTime = deadline_time;//open_time + (duration_min * 1 minutes);
 		_closed = false;
+		_owner = owner; // if a Game deploys new Announcement, msg.sender is Game contract. the owner should be the onwer of Game. 
 	}
 	function cashier() public view returns(address) {
 		return _cashier;
@@ -30,7 +31,7 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	function openTime() public view returns(uint) {
 		return _openTime;
 	}
-	function closeTime() public view returns(uint) {
+	function deadlineTime() public view returns(uint) {
 		return _closeTime;
 	}
 	function isClosed() public view returns(bool) {

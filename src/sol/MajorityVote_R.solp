@@ -12,6 +12,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	address[] private _addresses;
 
 	uint private _votingFee;
+	uint private _totalVote;
 	RESULT_TYPE[] private _candidates;
 
 	//filled at the time of voting deadline
@@ -21,10 +22,14 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	uint private _finalVoteVolume;
 	uint private _refundFraction;
 
-	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
+	uint private _timeExtensionOnReversal;
 
-	constructor(address cashier, address regulation, uint open_time, uint duration_min) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, open_time, duration_min) {
+	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
+	event Reversed(address indexed voter, RESULT_TYPE content, uint volume);
+
+	constructor(address cashier, address regulation, address owner, uint open_time, uint deadline_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, deadline_time) {
 		_truthIndex = UNDECIDED;
+		_timeExtensionOnReversal = 30 miniutes;
 	}
 
 	function ownerSupplyBody(uint coin) internal {
@@ -43,15 +48,34 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		if(_closed)
 			ERROR_CASE("voting is already closed")
 		
+		if(_totalVote + volume < _totalVote)
+			ERROR_CASE("overflow")
+
 		uint32 index = findOrCreate(content);
+        if(_totalVote!=0) {
+		    uint32 major_index = currentMajorIndex();
+		    uint major_total = currentVotingOf(major_index);
+		    // if all votings are unlimited, voting fee cannot pay even gas of voting.
+		    // to reserve voters profit, additional votes for 99% majority is rejected.
+            if(index==major_index && major_total*100 >= (_totalVote + _votingFee)*99))
+                ERROR_CASE("Existing Voter Protect")
+
+            // in case of reversals ( it may be malicious! ), the deadline time is extended automatically.
+            // the other justice voters get a chance of steal the malicious votes.
+            if(index!=major_index && currentVotingOf(index)+volume >= major_total) {
+                emit Reversed(from, content, volume);
+                _deadlineTime += _timeExtenstionOnReversal;
+            }
+
+        }
+
+        _totalVote += volume;
 		Vote storage ch = _voters[from];
 		bool new_voter = ch.volume==0;
 		// in case of multiple votes, the last vote content is valid. volume is total votes.
 		ch.index = index;
 		uint current_volume = ch.volume;
 		ch.volume = current_volume + volume;
-		if(ch.volume < current_volume)
-			ERROR_CASE("overflow")
 			
 		if(new_voter)
 			_addresses.push(from); 
@@ -67,14 +91,32 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		_candidates.push(content);
 		return uint32(_candidates.length-1);
 	}
+	functio currentVotingOf(uint32 index) private view returns(uint) {
+		uint[] memory volumes = currentVotingList();
+		return volumes[index];
+	}
+	function currentMajorIndex() private view returns(uint) {
+		uint[] memory volumes = currentVotingList();
+		uint major_index = 0;
+		uint major_volume = 0;
+		for(uint i=0; i<volumes.length; i++) {
+			uint v = volumes[i];
+			if(v > major_volume) {
+				major_volume = v;
+				major_index = i;
+			}
+		}
+		return major_index;
 
-	function currentVotingList() public view returns(uint[] ) {
+	}
+
+	function currentVotingList() public view returns(RESULT_TYPE[], uint[] ) {
 		uint[] memory volumes = new uint[](_candidates.length);
 		for(uint i=0; i<_addresses.length; i++) {
 			address a = _addresses[i];
 			volumes[i] += _voters[a].volume;
 		}
-		return volumes;
+		return (_candidates, volumes);
 	}
 	// bytes[] is not allowed by solidity compiler. then use fixed size instead.
 	function candidateList() public view returns(RESULT_TYPE[] memory) {
@@ -82,9 +124,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	}
 
 	//Close Voting
-	function close() public onlyOwner {
-		if(getNow() < _closeTime)
+	function close() public onlyOwnerOrCashier {
+		if(getNow() < _deadlineTime)
 			ERROR_CASE("current time is before voting close time")
+		if(_totalVote==0)
+		    ERROR_CASE("no votes")
 		if(_closed)
 			ERROR_CASE("voting is already closed")
 

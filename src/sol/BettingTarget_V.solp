@@ -11,6 +11,12 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 	function betBody(address sender, VOTE_TYPE content, uint coin) internal;
 	function ownerSupplyBody(uint coin) internal;
 
+    modifier onlyOwnerOrCahier() {
+        require(msg.sender == _owner || msg.sender == _cashier);
+        _;
+    }
+
+
 	function bet(address sender, VOTE_TYPE content, uint coin) public {
 		//this restriction is important
 		if(msg.sender != address(_cashier)) 
