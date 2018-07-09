@@ -2,6 +2,7 @@ pragma solidity ^0.4.0;
 import "./CoinCashier.sol";
 import "./IRegulation.sol";
 import "./ResultAnnouncement_R#RESULT_SIZE.sol";
+import "./MajorityVote_R#RESULT_SIZE.sol";
 
 contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE {   
 	address[] internal _addresses;
@@ -23,14 +24,6 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	constructor(address cashier, address result_src, address regulation, uint open_time, uint deadline_time) public {
 		_cashier = CoinCashier(cashier);
 		_resultSource = ResultAnnouncement_R ##RESULT_SIZE(result_src);
-		_regulation = IRegulation(regulation);
-		_openTime = open_time;
-		_deadlineTime = deadline_time;
-	}
-	constructor(address cashier, address regulation, uint open_time, uint deadline_time, uint vote_open_time, uint vote_deadline_time) public {
-	ResultAnnouncement_R ##RESULT_SIZE
-		_cashier = CoinCashier(cashier);
-		_resultSource = new MajorityVoteResultAnnouncement_R ##RESULT_SIZE(result_src);
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
 		_deadlineTime = deadline_time;
@@ -59,6 +52,9 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	}
 	function regulation() public view returns(address) {
 		return _regulation;
+	}
+	function resultSource() public view returns(address) {
+		return _resultSource;
 	}
 	function getOwnerSupply() public view onlyOwner returns(uint) {
 		return _ownerSupply;

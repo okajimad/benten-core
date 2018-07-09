@@ -16,8 +16,8 @@ contract('Basic games', function(accounts) {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
 	var reg = await Regulation.new({from:a0});
 	var now = (await cashier.getNow()).toNumber();
-    var voting = await MajorityVote.new(cashier.address, reg.address, now+60, 10, {from:a0});
-	var game = await DivideEqually.new(cashier.address, voting.address, reg.address, now, true, {from:a0});
+	var game = await DivideEqually.new(cashier.address, reg.address, now, now+60, now+120, now+180, true, {from:a0});
+    var voting = await game.resultSource();
 
   var a0_initial_coin = 0;
   var a1_initial_coin = 0;

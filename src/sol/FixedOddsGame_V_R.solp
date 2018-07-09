@@ -16,7 +16,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 	Entry[] internal _bettings;
 
 
-	constructor(address cashier, address voting, address regulation, uint open_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(cashier, voting, regulation, open_time) {
+	constructor(address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(cashier, voting, regulation, open_time, close_time) {
 		_allowCancel = allow_cancel;
 	}
 
@@ -116,7 +116,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 	}
 
 	//Close Voting
-	function close() public onlyOwner {
+	function close() public onlyOwnerOrCashier {
 		if(!_resultSource.isClosed())
 			ERROR_CASE("voting address is not closed")
 		if(_cancelled)

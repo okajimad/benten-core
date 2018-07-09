@@ -16,6 +16,7 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 		_openTime = open_time;
 		_deadlineTime = deadline_time;//open_time + (duration_min * 1 minutes);
 		_closed = false;
+		if(owner==address(0)) owner = msg.sender;
 		_owner = owner; // if a Game deploys new Announcement, msg.sender is Game contract. the owner should be the onwer of Game. 
 	}
 	function cashier() public view returns(address) {
@@ -26,13 +27,13 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	}
 
 	function voteAcceptable() public view returns(bool) {
-		return _openTime <= getNow() && getNow() < _closeTime;
+		return _openTime <= getNow() && getNow() < _deadlineTime;
 	}
 	function openTime() public view returns(uint) {
 		return _openTime;
 	}
 	function deadlineTime() public view returns(uint) {
-		return _closeTime;
+		return _deadlineTime;
 	}
 	function isClosed() public view returns(bool) {
 		return _closed;
