@@ -215,7 +215,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 
 	function calculateRefundWithOdds(VOTE_TYPE content, RESULT_TYPE truth, uint odds, uint volume) public pure returns(uint) {
 		if(content==truth)
-			return volume * odds / 1000; //odds is permil, TODO overflow check
+			return permilMul(volume, odds); //odds is permil, TODO overflow check
 		else
 			return 0;
 	}

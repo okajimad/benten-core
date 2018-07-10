@@ -25,6 +25,9 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	function regulation() public view returns(address) {
 		return _regulation;
 	}
+	function votingFee() public pure returns(uint) {
+		return 0;
+	}
 
 	function voteAcceptable() public view returns(bool) {
 		return _openTime <= getNow() && getNow() < _deadlineTime;

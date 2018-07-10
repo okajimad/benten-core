@@ -25,8 +25,7 @@ contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE
 		if(index==0xFFFFFFFF) return 0;
 
 		uint winners = _bettings[index].volume;
-		//TODO overflow check
-		uint owner_share = total * _gameOwnerSharePermil / 1000;
+		uint owner_share = permilMul(total , _gameOwnerSharePermil);
 		return (total - owner_share) * volume / winners;
 	}
 

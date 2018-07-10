@@ -11,7 +11,7 @@ contract('ETHCashier', function(accounts) {
   it("ethcashier_basic", async function() {
     var cashier = await ETHCashier.new("test1", 1000000000, false, {from:a0});
 	var now = (await cashier.getNow()).toNumber();
-    var vote = await MajorityVote.new(cashier.address, null, now-1, 10, {from:a0});
+    var vote = await MajorityVote.new(cashier.address, null, a0, now-1, 10, {from:a0});
     assert.equal(web3.eth.getBalance(cashier.address), 0);
     
     var s1 = await cashier.bet8(vote.address, "A", {from:a0, value:30000000});
@@ -20,6 +20,8 @@ contract('ETHCashier', function(accounts) {
 	assert.equal(await cashier.balanceOf(vote.address), 30000000);
 	assert.equal(await cashier.balanceOf(a1), 0);
     assert.equal(web3.eth.getBalance(cashier.address), 30000000);
+	console.log("AAA " + (await cashier.balanceList({from:a0})));
+	console.log("AAA " + (await cashier.balanceListPrac2({from:a0})));
     
     await cashier.bet8(vote.address, "B", {from:a1, value:50000000});
 	assert.equal(await cashier.balanceOf(a0), 0);

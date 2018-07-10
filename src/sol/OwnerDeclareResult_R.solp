@@ -9,14 +9,14 @@ contract OwnerDeclareResult_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZ
 
 	RESULT_TYPE private _result;
 
-	constructor(address cashier, address regulation, uint open_time, uint duration_min) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, open_time, duration_min) {
+	constructor(address cashier, address regulation, address owner, uint open_time, uint deadline_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, deadline_time) {
 	}
 	function truth() public view returns(RESULT_TYPE) {
 		return _result;
 	}
 	
 	function setTruch(RESULT_TYPE v) public onlyOwner {
-		if(getNow() < _closeTime)
+		if(getNow() < _deadlineTime)
 			ERROR_CASE("current time is before voting close time")
 		if(_closed)
 			ERROR_CASE("voting is already closed")

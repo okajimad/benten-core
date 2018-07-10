@@ -46,6 +46,10 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		require(_closed);
 		return _totalRefunds;
 	}
+	function refundTuple() public view returns(address[], uint[], uint) {
+		require(_closed);
+		return (_addresses, _refunds, _totalBettings + _ownerSupply - _totalRefunds);
+	}
 
 	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
 		Entry[] storage e = _entries[msg.sender];
@@ -146,7 +150,11 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		}
 		
 		//remaining coin go to the owner of this game
-		_cashier.transferCoin(this.getOwner(), _totalBettings + _ownerSupply - _totalRefunds);
+		uint base_profit = _totalBettings + _ownerSupply - _totalRefunds;
+		uint cashier_fee = calcCashierFee(base_profit);
+		
+		_cashier.transferCoin(this.getOwner(), base_profit - cashier_fee);
+		_cashier.transferCoin(_cashier, cashier_fee);
 		_closed = true;
 
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
@@ -180,6 +188,13 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		_closed = true;
 
 		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
+	}
+
+	function calcCashierFee(uint profit) public view returns(uint) {
+		if(_cashierFeeType==CashierFeeType.Value)
+			return profit < _cashierFee? profit : _cashierFee;
+		else
+			return permilMul(profit, _cashierFee);
 	}
 
 

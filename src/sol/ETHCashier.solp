@@ -64,7 +64,7 @@ contract ETHCashier is BentenContractBase, ICoinCashier  {
 	}
 
 	//list all balances
-	function balanceList() public view onlyOwner returns(address[], uint[] )  {
+	function balanceList() public view returns(address[], uint[] )  {
 		address[] memory ad = new address[](_addresses.length);
 		uint[] memory vol = new uint[](_addresses.length);
 		for(uint i=0; i<_addresses.length; i++) {
@@ -72,6 +72,18 @@ contract ETHCashier is BentenContractBase, ICoinCashier  {
 			vol[i] = _balances[ad[i]].coin;
 		}
 		return (ad, vol);
+	}
+	function balanceListPrac1() public view returns(address[] )  {
+		return _addresses;
+	}
+	function balanceListPrac2() public view returns(uint[] )  {
+		address[] memory ad = new address[](_addresses.length);
+		uint[] memory vol = new uint[](_addresses.length);
+		for(uint i=0; i<_addresses.length; i++) {
+			ad[i] = _addresses[i];
+			vol[i] = _balances[ad[i]].coin;
+		}
+		return vol;
 	}
 	
 	function deposit() payable public { //NOT external, since bet() calls deposit
