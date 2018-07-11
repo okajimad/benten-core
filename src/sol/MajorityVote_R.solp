@@ -30,6 +30,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	constructor(address cashier, address regulation, address owner, uint open_time, uint deadline_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, deadline_time) {
 		_truthIndex = UNDECIDED;
 		_timeExtensionOnReversal = 30 minutes;
+		_version = "MajorityVote.0";
 	}
 
 	function ownerSupplyBody(uint coin) internal {

@@ -14,8 +14,9 @@ contract OwnerDeclareResult_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZ
 	function truth() public view returns(RESULT_TYPE) {
 		return _result;
 	}
-	
-	function setTruch(RESULT_TYPE v) public onlyOwner {
+	function close() public onlyOwnerOrCashier {
+	}
+	function setTruth(RESULT_TYPE v) public onlyOwner {
 		if(getNow() < _deadlineTime)
 			ERROR_CASE("current time is before voting close time")
 		if(_closed)

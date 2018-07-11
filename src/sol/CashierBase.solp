@@ -1,6 +1,7 @@
 pragma solidity ^0.4.0;
 import './BentenContractBase.sol';
 import './ICoinCashier.sol';
+import './BettingTarget_V8.sol';
 
 //ETHCashier omits deposit/withdraw feature.
 //now bet() is payable and transferCoin() combines ETH transfer
@@ -201,6 +202,12 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		}
 		if(total > balanceOf(msg.sender))
 			ERROR_CASE("total balance is insufficient")
+	}
+
+	//close target
+	function delegatedClose8(address target) public onlyOwner {
+		BettingTarget_V8 t = BettingTarget_V8(target);
+		t.close();
 	}
 
 	//Verify an address is trusted contract

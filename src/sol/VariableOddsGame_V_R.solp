@@ -147,7 +147,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	
 
 	//Close Voting
-	function close() public onlyOwner  {
+	function close() public onlyOwnerOrCashier  {
 		if(!_resultSource.isClosed())
 			ERROR_CASE("voting address is not closed")
 		if(_cancelled)
