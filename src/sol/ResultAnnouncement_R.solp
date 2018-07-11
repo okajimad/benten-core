@@ -25,7 +25,7 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	function regulation() public view returns(address) {
 		return _regulation;
 	}
-	function votingFee() public pure returns(uint) {
+	function votingFee() public view returns(uint) {
 		return 0;
 	}
 

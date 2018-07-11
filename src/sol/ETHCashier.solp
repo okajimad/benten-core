@@ -1,212 +1,20 @@
 pragma solidity ^0.4.0;
-import './BentenContractBase.sol';
 import './BettingTarget_V8.sol';
 import './BettingTarget_V16.sol';
-import './ICoinCashier.sol';
+import './CashierBase.sol';
 
 //ETHCashier omits deposit/withdraw feature.
 //now bet() is payable and transferCoin() combines ETH transfer
-contract ETHCashier is BentenContractBase, ICoinCashier  {
-	string public name;
-	uint internal _issuedVolume;
-	uint internal _poolVolume;
-	address[] internal _addresses;
-	address[] internal _borrowers;
+contract ETHCashier is CashierBase  {
 
-	mapping (address => Account) internal _balances;
-	mapping (address => Account) internal _loans;
-	bool private _open;
-	bool private _allowAdditionalIssue;
-	bool private _verifyBettingTargetContent;
 
-	event Deposit(address indexed account, uint amount);
-	event Withdraw(address indexed account, uint amount);
-	event TransferCoin(address indexed from, address indexed to, uint amount);
-
-	struct Account {
-		uint coin;
-	}
-
-	constructor(string name_, uint initialIssue, bool allowAdditionalIssue) public {
-		name = name_;
+	constructor(string name, uint initialIssue, bool allowAdditionalIssue) public {
+		_version = "ETHCashier.0";
+		_name = name;
 		_issuedVolume = initialIssue;
 		_poolVolume = initialIssue;
 		_allowAdditionalIssue = allowAdditionalIssue;
 		_open = true;
-	}
-	function setOpen(bool open) onlyOwner public {
-		_open = open;
-	}
-	function isOpen() public view returns(bool) {
-		return _open;
-	}
-	function doesVerifyBettingTargetContent() public view returns(bool) {
-		return _verifyBettingTargetContent;
-	}
-	function setVerifyBettingTargetContent(bool v) onlyOwner public {
-		_verifyBettingTargetContent = v;
-	}
-	function additionalIssueAllowed() public view returns(bool) {
-		return _allowAdditionalIssue;
-	}
-	function poolVolume() public view returns(uint) {
-		return _poolVolume;
-	}
-	function balanceOf(address a) public view returns(uint) {
-		return _balances[a].coin;
-	}
-
-	function addIssue(uint value) public onlyOwner {
-		if(!_allowAdditionalIssue)
-			ERROR_CASE("!_allowAdditionalIssue")
-		_issuedVolume += value;
-		_poolVolume += value;
-	}
-
-	//list all balances
-	function balanceList() public view returns(address[], uint[] )  {
-		address[] memory ad = new address[](_addresses.length);
-		uint[] memory vol = new uint[](_addresses.length);
-		for(uint i=0; i<_addresses.length; i++) {
-			ad[i] = _addresses[i];
-			vol[i] = _balances[ad[i]].coin;
-		}
-		return (ad, vol);
-	}
-	function balanceListPrac1() public view returns(address[] )  {
-		return _addresses;
-	}
-	function balanceListPrac2() public view returns(uint[] )  {
-		address[] memory ad = new address[](_addresses.length);
-		uint[] memory vol = new uint[](_addresses.length);
-		for(uint i=0; i<_addresses.length; i++) {
-			ad[i] = _addresses[i];
-			vol[i] = _balances[ad[i]].coin;
-		}
-		return vol;
-	}
-	
-	function deposit() payable public { //NOT external, since bet() calls deposit
-		if(isContract(msg.sender)) 
-			ERROR_CASE("any contracts cannot deposit")
-
-		uint amount = msg.value;
-		uint coin = amount;
-		// amount / coin rate may be change
-		if(!_open)
-			ERROR_CASE("cashier is not open")
-		if(_poolVolume < coin)
-			ERROR_CASE("pool is insufficient")
-
-		Account storage acc = _balances[msg.sender];
-		if(acc.coin==0) _addresses.push(msg.sender);
-
-		acc.coin += coin;
-		_poolVolume -= coin;
-		_balances[msg.sender] = acc;
-		emit Deposit(msg.sender, coin);
-	}
-
-	function withdraw(uint coin) public {
-		withdraw(msg.sender, coin);
-	}
-	function withdraw(address to, uint coin) private {
-		if(!_open)
-			ERROR_CASE("cashier is not open")
-		Account storage acc = _balances[to];
-		if(acc.coin < coin)
-			ERROR_CASE("coin is insufficient")
-
-		uint amount = coin;
-		acc.coin -= coin;
-		_poolVolume += coin;
-		if(acc.coin==0) {
-			delete _balances[to];
-		}
-		else
-			_balances[to] = acc;
-
-		// if this transfer fails, an exception is thrown.
-		// you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
-		if(!to.call.value(amount)()) revert();
-
-		emit Withdraw(to, coin);
-	}
-
-	//list all loans
-	function loanList() public view onlyOwner returns(address[], uint[] )  {
-		address[] memory ad = new address[](_borrowers.length);
-		uint[] memory vol = new uint[](_borrowers.length);
-		for(uint i=0; i<_borrowers.length; i++) {
-			ad[i] = _borrowers[i];
-			vol[i] = _loans[ad[i]].coin;
-		}
-		return (ad, vol);
-	}
-
-	//lend / repay feature: primarily used by game owner
-	function lendLoan(address to, uint coin) external onlyOwner {
-		// amount / coin rate may be change
-		if(!_open)
-			ERROR_CASE("cashier is not open")
-		if(_poolVolume < coin)
-			ERROR_CASE("pool is insufficient")
-
-		Account storage loan = _loans[to];
-		if(loan.coin==0) _borrowers.push(to);
-
-		loan.coin += coin;
-		_poolVolume -= coin;
-		_loans[to] = loan;
-
-		Account storage b = _balances[to];
-		b.coin += coin;
-		_balances[to] = b;
-	}
-
-	function repayLoan(uint coin) public {
-		if(!_open)
-			ERROR_CASE("cashier is not open")
-		address u = msg.sender;
-		Account storage b = _balances[u];
-		if(b.coin < coin)
-			ERROR_CASE("coin is insufficient")
-		Account storage l = _loans[u];
-		if(l.coin < coin)
-			ERROR_CASE("repay amount > loan balance")
-
-		b.coin -= coin;
-		if(b.coin==0) {
-			delete _balances[u];
-		}
-		else
-			_balances[u] = b;
-
-		l.coin -= coin;
-		if(l.coin==0) {
-			delete _loans[u];
-		}
-		else
-			_loans[u] = l;
-
-		_poolVolume += coin;
-	}
-
-	//return
-	function transferCoin(address from, address to, uint coin) private {
-		if(coin==0)
-			return;
-		if(!_open)
-			ERROR_CASE("cashier is not open")
-
-		Account storage src = _balances[from];
-		if(src.coin < coin)
-			ERROR_CASE("coin is insufficient")
-		Account storage dst = _balances[to];
-		if(dst.coin==0) _addresses.push(to);
-		src.coin -= coin;
-		dst.coin += coin;
-		emit TransferCoin(from, to, coin);
 	}
 
 	//single transfer
@@ -214,25 +22,14 @@ contract ETHCashier is BentenContractBase, ICoinCashier  {
 		if(coin==0)
 			return;
 		transferCoin(msg.sender, to, coin);
-		withdraw(to, coin);
+		withdraw(to, coin); //direct withdraw
 	}
 	
 	//bulk transfer
 	function multiTransferCoin(address[] to, uint[] coin) public {
-		require(to.length==coin.length);
-		uint i;
-		uint total = 0;
-		for(i=0; i<coin.length; i++) {
-			uint m = total;
-			total += coin[i];
-			//uint overflow check
-			if(m > total)
-				ERROR_CASE("overflow on multipleTransfer!")
-		}
-		if(total > balanceOf(msg.sender))
-			ERROR_CASE("total balance is insufficient")
+		checkMultiTransferCoin(to, coin);
 
-		for(i=0; i<coin.length; i++) {
+		for(uint i=0; i<coin.length; i++) {
 			transferCoin(msg.sender, to[i], coin[i]);
 			withdraw(to[i], coin[i]);
 		}
@@ -276,38 +73,5 @@ contract ETHCashier is BentenContractBase, ICoinCashier  {
 		b.ownerSupply(coin);
 	}
 
-	//Verify an address is trusted contract
-	function verifyTarget(address target) public view returns(bool) {
-		bytes32 h = hashContract(target);
-		for(uint i=0; i<_trustedHashes.length; i++) {
-			if(h == _trustedHashes[i]) return true;
-		}
-		return false;
-	}
-	bytes32[] internal _trustedHashes;
-	function addTrustedContract(address target) public onlyOwner {
-		_trustedHashes.push(hashContract(target));
-	}
-
-	function isContract(address addr) private view returns (bool is_contract) {
-		uint length;
-		assembly {
-			//retrieve the size of the code on target address, this needs assembly
-			length := extcodesize(addr)
-		}
-		return (length>0);
-	}
-	function hashContract(address addr) public view returns(bytes32) {
-		uint length;
-		assembly {
-			//retrieve the size of the code on target address, this needs assembly
-			length := extcodesize(addr)
-		}
-		bytes memory buf = new bytes(length);
-		assembly {
-			extcodecopy(addr, add(buf, 0x20), 0, length)
-		}
-		return sha256(buf);
-	}
 
 }

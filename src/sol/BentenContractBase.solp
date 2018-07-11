@@ -5,6 +5,7 @@ pragma solidity ^0.4.0;
 */
 contract BentenContractBase  {
     address internal _owner;
+    string internal _version;
 
     constructor() public {
         _owner = msg.sender;
@@ -20,6 +21,9 @@ contract BentenContractBase  {
 
     function getOwner() public view returns (address) {
         return _owner;
+    }
+    function getVersion() public view returns(string) {
+        return _version;
     }
 
     //BUILD_TIME is defined in preprocessor
