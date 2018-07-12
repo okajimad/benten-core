@@ -19,6 +19,10 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	bool internal _allowAdditionalIssue;
 	bool internal _verifyBettingTargetContent;
 
+	//we assume delegatedAddress is managed by server, not human.
+	//if the owner set delegatedAddress, some transactions (such as tasks executed at fixed time) from delegatedAddress are permitted
+	address internal _delegatedAddress;
+
 	event Deposit(address indexed account, uint amount);
 	event Withdraw(address indexed account, uint amount);
 	event TransferCoin(address indexed from, address indexed to, uint amount);
@@ -41,6 +45,12 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	}
 	function setVerifyBettingTargetContent(bool v) onlyOwner public {
 		_verifyBettingTargetContent = v;
+	}
+	function getDelegatedAddress() public view returns(address) {
+		return _delegatedAddress;
+	}
+	function setDelegatedAddress(address a) public onlyOwner {
+		_delegatedAddress = a;
 	}
 	function additionalIssueAllowed() public view returns(bool) {
 		return _allowAdditionalIssue;
@@ -205,7 +215,9 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	}
 
 	//close target
-	function delegatedClose8(address target) public onlyOwner {
+	function delegatedClose8(address target) public {
+		if(msg.sender!=getOwner() && msg.sender!=_delegatedAddress)
+			ERROR_CASE("sender does not allowed")
 		BettingTarget_V8 t = BettingTarget_V8(target);
 		t.close();
 	}
