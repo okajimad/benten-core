@@ -15,7 +15,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	uint private _totalVote;
 	RESULT_TYPE[] private _candidates;
 
-	//filled at the time of voting deadline
+	//filled at the time of voting lock
 	uint32 private _truthIndex;
 	uint32 constant UNDECIDED = 0xFFFFFFFF;
 	uint[] private _refundList;
@@ -27,7 +27,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
 	event Reversed(address indexed voter, RESULT_TYPE content, uint volume);
 
-	constructor(address cashier, address regulation, address owner, uint open_time, uint deadline_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, deadline_time) {
+	constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
 		_truthIndex = UNDECIDED;
 		_timeExtensionOnReversal = 30 minutes;
 		_version = "MajorityVote.0";
@@ -61,11 +61,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 			if(index==major_index && isOccupiedByMajority())
 				ERROR_CASE("Existing Voter Profit Protect")
 
-			// in case of reversals ( it may be malicious! ), the deadline time is extended automatically.
+			// in case of reversals ( it may be malicious! ), the lock time is extended automatically.
 			// the other justice voters get a chance of steal the malicious votes.
 			if(index!=major_index && currentVotingOf(index)+volume >= major_total) {
 				emit Reversed(from, content, volume);
-				_deadlineTime += _timeExtensionOnReversal;
+				_lockTime += _timeExtensionOnReversal;
 			}
 
 		}
@@ -133,7 +133,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 
 	//Close Voting
 	function close() public onlyOwnerOrCashier {
-		if(getNow() < _deadlineTime)
+		if(getNow() < _lockTime)
 			ERROR_CASE("current time is before voting close time")
 		if(_totalVote==0)
 		    ERROR_CASE("no votes")

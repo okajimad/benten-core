@@ -1,7 +1,7 @@
 pragma solidity ^0.4.0;
 import "../FixedOddsGame_V8_R8.sol";
 import "../FixedOddsGame_V16_R8.sol";
-import "../Random.sol";
+import "../util/Random.sol";
 
 // A lottery that the winners take all bettings in proportion to their bettings
 contract ShuffleLottery_V ##VOTE_SIZE _R8	 is FixedOddsGame_V ##VOTE_SIZE _R8  {
@@ -11,7 +11,7 @@ contract ShuffleLottery_V ##VOTE_SIZE _R8	 is FixedOddsGame_V ##VOTE_SIZE _R8  {
 	VOTE_TYPE[] private _tickets;
 	int private _usedTicket;
 
-	constructor(address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel, uint ticket_count) public FixedOddsGame_V ##VOTE_SIZE _R8 (cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel, uint ticket_count) public FixedOddsGame_V ##VOTE_SIZE _R8 (title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
 		_payoutPermil = 1000;
 		_random = new Random(uint128(now));
 		_tickets = new VOTE_TYPE[](ticket_count);

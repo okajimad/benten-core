@@ -3,21 +3,20 @@ var truffle_event = require("../src/tools/truffle_event");
 
 var Cashier = artifacts.require("CoinCashier");
 var MajorityVote = artifacts.require("MajorityVote_R8");
-var Regulation = artifacts.require("DivideEquallyRegulation");
+var Regulation = artifacts.require("GenericSport_WinLose");
 var DivideEqually = artifacts.require("DivideEqually_V8_R8");
-var SimpleLottery = artifacts.require("SimpleLottery_V8_R8");
 
 contract('Basic games', function(accounts) {
   var a0 = accounts[0];
   var a1 = accounts[1];
-  var c0 = "a1111";
-  var c1 = "a2222";
+  var c0 = "0x000100";
+  var c1 = "0x000001";
   it("DivideEqually", async function() {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
 	var reg = await Regulation.new({from:a0});
 	var now = (await cashier.getNow()).toNumber();
-	var game = await DivideEqually.new(cashier.address, reg.address, now, now+60, now+120, now+180, true, {from:a0});
-    var voting = await game.resultSource();
+    var voting = await MajorityVote.new(cashier.address, reg.addres, a0, now+120, now+180);
+	var game = await DivideEqually.new("さゆ", cashier.address, voting.address, reg.address, now, now+60, true, {from:a0});
 
   var a0_initial_coin = 0;
   var a1_initial_coin = 0;
@@ -26,6 +25,7 @@ contract('Basic games', function(accounts) {
     await cashier.ownerSupply(voting.address, 100, {from:a0});
     await cashier.bet8(game.address, c0, 400, {from:a0});
     await cashier.bet8(game.address, c1, 300, {from:a1})
+    assert.equal(await game.title(), "さゆ");
     //this test gamble returns all bets to winner. if a1 wins, a1 receives 700
     await cashier.bet8(voting.address, c1, 200, {from:a0});
     
@@ -49,8 +49,8 @@ contract('Basic games', function(accounts) {
     assert.equal(await game.estimateTotalRefund(c0, {from:a0}), 700);
     assert.equal(await game.estimateTotalRefund(c1, {from:a0}), 700);
 
-    await voting.setNow(now+1000);
-    await game.setNow(now+1000);
+    await voting.setNow(now+300);
+    await game.setNow(now+300);
     assert.equal(await game.betAcceptable(), false);
     assert.equal(await game.isClosed(), false);
     assert.equal(await voting.voteAcceptable(), false);
@@ -78,8 +78,8 @@ contract('Basic games', function(accounts) {
       var cashier = await Cashier.new("test", 10000, false, { from: a0 });
       var reg = await Regulation.new({ from: a0 });
       var now = (await cashier.getNow()).toNumber();
-      var voting = await MajorityVote.new(cashier.address, reg.address, now + 60, 10, { from: a0 });
-      var game = await SimpleLottery.new(cashier.address, voting.address, reg.address, now, true, { from: a0 });
+      var voting = await MajorityVote.new(cashier.address, reg.address, a0, now + 120, now+180, { from: a0 });
+      var game = await SimpleLottery.new(cashier.address, voting.address, reg.address, now, now+60, true, { from: a0 });
       game.setPayoutPermil(3000); //winner 3 takes 3 timers of their bets
 
       var a0_initial_coin = 0;

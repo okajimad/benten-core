@@ -1,13 +1,14 @@
 pragma solidity ^0.4.0;
 import "../FixedOddsGame_V8_R8.sol";
 import "../FixedOddsGame_V16_R8.sol";
+import "../FixedOddsRegulation.sol";
 
 // A lottery that the winners take all bettings in proportion to their bettings
 contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
 
 	uint private _gameOwnerSharePermil; // game owner takes constant rate of all bettings
 
-	constructor(address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
 	}
 
 	function setGameOwnerSharePermil(uint value) public onlyOwner {
@@ -18,7 +19,10 @@ contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE
 	}
 
 	function calculateRefund(VOTE_TYPE content, RESULT_TYPE truth, uint volume) public view returns(uint) {
-		if(content!=truth) return 0; //losers
+		int x = FixedOddsRegulation(_regulation).calcFixedOddsRefund_V ##VOTE_SIZE _R ##RESULT_SIZE(content, truth);
+		if(x==-1) return volume; // confiscated game
+
+		if(x==0) return 0; //losers
 
 		uint total = _totalBettings;
 		uint32 index = findEntryIndex(truth);

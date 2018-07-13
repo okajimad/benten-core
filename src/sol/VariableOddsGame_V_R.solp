@@ -22,7 +22,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	uint private _totalRefunds;
 	uint private _totalBettings;
 
-	constructor(address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (cashier, voting, regulation, open_time, close_time) {
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, open_time, close_time) {
 		_allowCancel = allow_cancel;
 	}
 
