@@ -1,6 +1,5 @@
 pragma solidity ^0.4.0;
-import "../FixedOddsGame_V8_R8.sol";
-import "../FixedOddsGame_V16_R8.sol";
+import "../FixedOddsGame_V#VOTE_SIZE_R#RESULT_SIZE.sol";
 
 // A lottery that the winners take all bettings in proportion to their bettings
 contract SimpleLottery_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {

@@ -33,13 +33,29 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		_version = "MajorityVote.0";
 	}
 
+	//owner is changable if current owner is null.
+	//this feature is used by contract deployment by regulation or web server
+	function activate(address cashier, address regulation, address newOwner, uint open_time, uint lock_time) public {
+		if(_owner!=address(0))
+			ERROR_CASE("current owner is not null")
+		_cashier = ICoinCashier(cashier);
+		_regulation = IRegulation(regulation);
+		_openTime = open_time;
+		_lockTime = lock_time;
+		_closed = false;
+		_truthIndex = UNDECIDED;
+		_timeExtensionOnReversal = 30 minutes;
+
+		_owner = newOwner; //set new owner
+	}
+
 	function ownerSupplyBody(uint coin) internal {
 		_votingFee += coin;
 	}
 	function votingFee() public view returns(uint) {
 		return _votingFee;
 	}
-	function betBody(address from, bytes8 content, uint coin) internal {
+	function betBody(address from, RESULT_TYPE content, uint coin) internal {
 		vote(from, content, coin);
 	}
 

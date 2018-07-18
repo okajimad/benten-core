@@ -1,6 +1,6 @@
 pragma solidity ^0.4.19;
-import "../games/DivideEqually_V8_R8.sol";
-import "../MajorityVote_R8.sol";
+import "../games/DivideEqually_V4_R4.sol";
+import "../MajorityVote_R4.sol";
 import "../ETHCashier.sol";
 import "../FixedOddsRegulation.sol";
 
@@ -33,14 +33,14 @@ contract GenericSport_WinLose is FixedOddsRegulation {
     mapping (address => address) internal _gameMemo;
 
     function deployDivideEquallyGame(string title, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time 
-      /*DivideEqually_V8_R8.CashierFeeType feetype, uint cashierfee*/) public payable {
+      /*DivideEqually_V8_R4.FeeType feetype, uint cashierfee*/) public payable {
 
-      MajorityVote_R8 vote = new MajorityVote_R8(cashier, address(this), msg.sender, vote_open_time, vote_lock_time);
+      MajorityVote_R4 vote = new MajorityVote_R4(cashier, address(this), msg.sender, vote_open_time, vote_lock_time);
       ETHCashier ec = ETHCashier(cashier);
       // ec.ownerSupply(vote, owner_supply_coin); //CoinCashier style
       ec.ownerSupply(vote); //pay owner supply
 
-      //DivideEqually_V8_R8 game = new DivideEqually_V8_R8(title, cashier, address(vote), address(this), bet_open_time, bet_lock_time, false); //cancel not allowed
+      //DivideEqually_V8_R4 game = new DivideEqually_V8_R4(title, cashier, address(vote), address(this), bet_open_time, bet_lock_time, false); //cancel not allowed
       //game.setCashierFee(feetype, cashierfee);
       //_gameMemo[msg.sender] = game;
     }

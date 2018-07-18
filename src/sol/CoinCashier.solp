@@ -1,6 +1,6 @@
 pragma solidity ^0.4.0;
 import './BettingTarget_V8.sol';
-import './BettingTarget_V16.sol';
+import './BettingTarget_V4.sol';
 import './CashierBase.sol';
 
 contract CoinCashier is CashierBase  {
@@ -41,10 +41,10 @@ contract CoinCashier is CashierBase  {
 		b.bet(msg.sender, content, coin);
 	}
 
-	//bytes16 version
-	function bet16(address target, bytes16 content, uint coin) public {
+	//bytes4 version
+	function bet4(address target, bytes4 content, uint coin) public {
 		require(!_verifyBettingTargetContent || verifyTarget(target));
-		BettingTarget_V16 b = BettingTarget_V16(target);
+		BettingTarget_V4 b = BettingTarget_V4(target);
 		transferCoin(msg.sender, target, coin);
 		// BettingTarget.bet() accepts only if the caller is CoinCashier
 		b.bet(msg.sender, content, coin);

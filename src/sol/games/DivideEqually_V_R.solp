@@ -1,21 +1,22 @@
 pragma solidity ^0.4.0;
-import "../FixedOddsGame_V8_R8.sol";
-import "../FixedOddsGame_V16_R8.sol";
+import "../FixedOddsGame_V#VOTE_SIZE_R#RESULT_SIZE.sol";
 import "../FixedOddsRegulation.sol";
 
 // A lottery that the winners take all bettings in proportion to their bettings
 contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
 
-	uint private _gameOwnerSharePermil; // game owner takes constant rate of all bettings
+	FeeType private _gameOwnerFeeType;
+	uint private _gameOwnerFee; // game owner takes constant rate of all bettings
 
 	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
 	}
 
-	function setGameOwnerSharePermil(uint value) public onlyOwner {
-		_gameOwnerSharePermil = value;
+	function getGameOwnerFee() public view returns(FeeType, uint) {
+		return (_gameOwnerFeeType, _gameOwnerFee);
 	}
-	function gameOwnerSharePermil() public view returns(uint) {
-		return _gameOwnerSharePermil;
+	function setGameOwnerFee(FeeType t, uint v) public onlyOwner {
+		_gameOwnerFeeType = t;
+		_gameOwnerFee = v;
 	}
 
 	function calculateRefund(VOTE_TYPE content, RESULT_TYPE truth, uint volume) public view returns(uint) {
@@ -29,7 +30,7 @@ contract DivideEqually_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE
 		if(index==0xFFFFFFFF) return 0;
 
 		uint winners = _bettings[index].volume;
-		uint owner_share = permilMul(total , _gameOwnerSharePermil);
+		uint owner_share = _gameOwnerFeeType==FeeType.Value? _gameOwnerFee : permilMul(total, _gameOwnerFee);
 		return (total - owner_share) * volume / winners;
 	}
 

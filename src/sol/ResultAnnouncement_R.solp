@@ -14,9 +14,8 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 		_cashier = ICoinCashier(cashier);
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
-		_lockTime = lock_time;//open_time + (duration_min * 1 minutes);
+		_lockTime = lock_time;
 		_closed = false;
-		if(owner==address(0)) owner = msg.sender;
 		_owner = owner; // if a Game deploys new Announcement, msg.sender is Game contract. the owner should be the onwer of Game. 
 	}
 	function cashier() public view returns(address) {

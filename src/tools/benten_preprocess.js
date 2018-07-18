@@ -34,13 +34,13 @@ function get_datasize_iteration(filename) {
   }
 	
   if(filename.endsWith("_V.solp"))
-    return [8,16].map(vote_def);
+    return [4,8].map(vote_def);
   else if(filename.endsWith("_V_R.solp")) {
-    var rd = result_def(8);
-    return [8,16].map(vote_def).map(function(e){return merge(e, rd)});
+    var rd = result_def(4);
+    return [4,8].map(vote_def).map(function(e){return merge(e, rd)});
   }
   else if(filename.endsWith("_R.solp"))
-    return [8].map(result_def);
+    return [4].map(result_def);
   else //not applied
     return [{}];
 }

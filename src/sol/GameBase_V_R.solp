@@ -6,7 +6,7 @@ import "./MajorityVote_R#RESULT_SIZE.sol";
 
 contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE {   
 
-	enum CashierFeeType {
+	enum FeeType {
 		Value, // fixed value
 		Ratio  // fixed ratio (permill)
 	}
@@ -23,7 +23,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	// cancel option
 	bool internal _allowCancel;
 	bool internal _cancelled;
-	CashierFeeType internal _cashierFeeType;
+	FeeType internal _cashierFeeType;
 	uint internal _cashierFee;
 
 	event Entried(address indexed user, VOTE_TYPE content, uint volume);
@@ -73,10 +73,10 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		return _ownerSupply;
 	}
 
-	function getCashierFee() public view returns(CashierFeeType, uint) {
+	function getCashierFee() public view returns(FeeType, uint) {
 		return (_cashierFeeType, _cashierFee);
 	}
-	function setCashierFee(CashierFeeType t, uint v) public onlyOwner {
+	function setCashierFee(FeeType t, uint v) public onlyOwner {
 		_cashierFeeType = t;
 		_cashierFee = v;
 	}

@@ -11,7 +11,5 @@ contract DivideEquallyRegulation is IRegulation {
     function documentHash() public view returns (bytes32) {
       return 0x01234567890123456789012345678901;
     }
-	function verifyVotingContent(bytes16 ) external view returns(bool) { return true; }
-	function verifyBetContent(bytes16 ) external view returns(bool) { return true; }
 
 }
