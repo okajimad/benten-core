@@ -5,6 +5,15 @@ contract MeasureGas {
   bytes32 private _data32;
   bytes private _dataLong;
 
+  enum Direction { North, South }
+  Direction private _direction;
+  function getDirection() public view returns(Direction) {
+    return _direction;
+  }
+  function setDirection(Direction v) public {
+    _direction = v;
+  }
+
   function set8(bytes8 d) public {
     _data8 = d;
   }

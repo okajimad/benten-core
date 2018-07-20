@@ -13,6 +13,8 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 	uint[] internal _refunds;
 	uint internal _totalRefunds;
 	uint internal _totalBettings;
+	uint internal _cashierFee;
+	uint internal _ownerRefund;
 	Entry[] internal _bettings;
 
 
@@ -46,9 +48,9 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		require(_closed);
 		return _totalRefunds;
 	}
-	function refundTuple() public view returns(address[], uint[], uint) {
+	function refundTuple() public view returns(address[] a, uint[] v, uint cf, uint ow) {
 		require(_closed);
-		return (_addresses, _refunds, _totalBettings + _ownerSupply - _totalRefunds);
+		return (_addresses, _refunds, _cashierFee, _ownerRefund);
 	}
 
 	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
@@ -151,10 +153,11 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		
 		//remaining coin go to the owner of this game
 		uint base_profit = _totalBettings + _ownerSupply - _totalRefunds;
-		uint cashier_fee = calcCashierFee(base_profit);
-		
-		_cashier.transferCoin(this.getOwner(), base_profit - cashier_fee);
-		_cashier.transferCoin(_cashier, cashier_fee);
+		_cashierFee = calcCashierFee(base_profit);
+		_ownerRefund = base_profit - _cashierFee;
+
+		_cashier.transferCoin(this.getOwner(), _ownerRefund);
+		_cashier.transferCoin(_cashier, _cashierFee);
 		_closed = true;
 
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
