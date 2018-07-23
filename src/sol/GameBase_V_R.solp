@@ -6,10 +6,6 @@ import "./MajorityVote_R#RESULT_SIZE.sol";
 
 contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE {   
 
-	enum FeeType {
-		Value, // fixed value
-		Ratio  // fixed ratio (permill)
-	}
 
 	string internal _title;
 	address[] internal _addresses; //better list
@@ -23,20 +19,26 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	// cancel option
 	bool internal _allowCancel;
 	bool internal _cancelled;
-	FeeType internal _cashierFeeType;
+
+	//results
+	uint internal _totalRefunds;
+	uint internal _totalBettings;
 	uint internal _cashierFee;
+	uint internal _ownerRefund;
+	uint[] internal _refunds;
 
 	event Entried(address indexed user, VOTE_TYPE content, uint volume);
 	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
 	event Cancelled(uint userCount, uint totalBetting, uint totalRefund);
 
-	constructor(string title, address cashier, address result_src, address regulation, uint open_time, uint lock_time) public {
+	constructor(string title, address cashier, address result_src, address regulation, uint open_time, uint lock_time, bool allow_cancel) public {
 		_title = title;
 		_cashier = CoinCashier(cashier);
 		_resultSource = ResultAnnouncement_R ##RESULT_SIZE(result_src);
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
 		_lockTime = lock_time;
+		_allowCancel = allow_cancel;
 	}
 
 	function title() public view returns(string) {
@@ -73,13 +75,16 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		return _ownerSupply;
 	}
 
-	function getCashierFee() public view returns(FeeType, uint) {
-		return (_cashierFeeType, _cashierFee);
+	function totalBettings() public view returns(uint) {
+		return _totalBettings;
 	}
-	function setCashierFee(FeeType t, uint v) public onlyOwner {
-		_cashierFeeType = t;
-		_cashierFee = v;
+	function totalRefunds() public view returns(uint) {
+		require(_closed);
+		return _totalRefunds;
 	}
-
+	function refundTuple() public view returns(address[] a, uint[] v, uint cf, uint ow) {
+		require(_closed);
+		return (_addresses, _refunds, _cashierFee, _ownerRefund);
+	}
 
 }

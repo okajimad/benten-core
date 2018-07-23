@@ -1,0 +1,37 @@
+pragma solidity ^0.4.0;
+import "./FixedOddsGame_V#VOTE_SIZE_R#RESULT_SIZE.sol";
+import "./ExPostRegulation.sol";
+
+// A lottery that the winners take all bettings in proportion to their bettings
+contract ExPostGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
+
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	}
+
+	function estimateOdds(VOTE_TYPE vote, RESULT_TYPE truth) public view returns(int) {
+		ExPostRegulation reg = ExPostRegulation(_regulation);
+
+		uint[] memory ol;
+		uint owner_share;
+		(ol, owner_share) = reg.calcOddsList_V ##VOTE_SIZE _R ##RESULT_SIZE(truth, voteList(), volumeList());
+		for(uint i=0; i<ol.length; i++) {
+			if(_bettings[i].content == vote)
+				return int(ol[i]);
+		}
+		return -1;
+
+	}
+	function voteList() public view returns(VOTE_TYPE[]) {
+		VOTE_TYPE[] memory r = new VOTE_TYPE[](_bettings.length);
+		for(uint i=0; i<_bettings.length; i++)
+			r[i] = _bettings[i].content;
+		return r;
+	}
+	function volumeList() public view returns(uint[]) {
+		uint[] memory r = new uint[](_bettings.length);
+		for(uint i=0; i<_bettings.length; i++)
+			r[i] = _bettings[i].volume;
+		return r;
+	}
+
+}

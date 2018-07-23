@@ -1,10 +1,11 @@
 
 var truffle_event = require("../src/tools/truffle_event");
+var ut = require("../src/tools/benten_util");
 
 var Cashier = artifacts.require("CoinCashier");
-var MajorityVote = artifacts.require("MajorityVote_R8");
+var MajorityVote = artifacts.require("MajorityVote_R4");
 var Regulation = artifacts.require("GenericSport_WinLose");
-var DivideEqually = artifacts.require("DivideEqually_V8_R8");
+var ExPostGame = artifacts.require("ExPostGame_V4_R4");
 
 contract('Basic games', function(accounts) {
   var a0 = accounts[0];
@@ -13,31 +14,32 @@ contract('Basic games', function(accounts) {
   var c1 = "0x000001";
   it("DivideEqually", async function() {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
-	var reg = await Regulation.new({from:a0});
+	var reg = await Regulation.new(0, 0, 0, 0, {from:a0});
 	var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.addres, a0, now+120, now+180);
-	var game = await DivideEqually.new("さゆ", cashier.address, voting.address, reg.address, now, now+60, true, {from:a0});
+	var game = await ExPostGame.new("さゆ", cashier.address, voting.address, reg.address, now, now+60, true, {from:a0});
 
   var a0_initial_coin = 0;
   var a1_initial_coin = 0;
     await cashier.deposit({from:a0, value:1000});
     await cashier.deposit({from:a1, value:1500});
     await cashier.ownerSupply(voting.address, 100, {from:a0});
-    await cashier.bet8(game.address, c0, 400, {from:a0});
-    await cashier.bet8(game.address, c1, 300, {from:a1})
+    await cashier.bet4(game.address, c0, 400, {from:a0});
+    await cashier.bet4(game.address, c1, 300, {from:a1})
     assert.equal(await game.title(), "さゆ");
     //this test gamble returns all bets to winner. if a1 wins, a1 receives 700
-    await cashier.bet8(voting.address, c1, 200, {from:a0});
+    await cashier.bet4(voting.address, c1, 200, {from:a0});
     
     assert.equal(await cashier.balanceOf(a0), 300);
     assert.equal(await cashier.balanceOf(a1), 1200);
     assert.equal(await cashier.balanceOf(voting.address), 300);
     assert.equal(await cashier.balanceOf(game.address), 700);
     var bettings = await game.currentBettingList();
+
     //assert.equal(bettings[0][0], c0); //TODO conversion utility required
     //assert.equal(bettings[0][1], c1);
-    assert.equal(bettings[1][0], 400);
-    assert.equal(bettings[1][1], 300);
+    assert.equal(bettings[2][0], 400);
+    assert.equal(bettings[2][1], 300);
     
     var b0 = await game.bettingOf({from:a0});
     var b1 = await game.bettingOf({from:a1});
@@ -45,9 +47,9 @@ contract('Basic games', function(accounts) {
     //assert.equal(b1[0], c1);
     assert.equal(b0[1], 400);
     assert.equal(b1[1], 300);
-
-    assert.equal(await game.estimateTotalRefund(c0, {from:a0}), 700);
-    assert.equal(await game.estimateTotalRefund(c1, {from:a0}), 700);
+    
+    ut.equalRoughly(await game.estimateTotalRefund(c0, {from:a0}), 700, 1);
+    ut.equalRoughly(await game.estimateTotalRefund(c1, {from:a0}), 700, 1);
 
     await voting.setNow(now+300);
     await game.setNow(now+300);
@@ -65,10 +67,10 @@ contract('Basic games', function(accounts) {
 	await game.close({from:a0});
     assert.equal(await game.betAcceptable(), false);
     assert.equal(await game.isClosed(), true);
-	assert.equal(await game.totalBettings(), 700);
-	assert.equal(await game.totalRefunds(), 700);
-    assert.equal(await cashier.balanceOf(a0), 600); //owner gets 100 as game owner profit
-    assert.equal(await cashier.balanceOf(a1), 1900); //a1 wins 700
+	ut.equalRoughly(await game.totalBettings(), 700, 1);
+	ut.equalRoughly(await game.totalRefunds(), 700, 1);
+    ut.equalRoughly(await cashier.balanceOf(a0), 600, 1); //owner gets 100 as game owner profit
+    ut.equalRoughly(await cashier.balanceOf(a1), 1900, 1); //a1 wins 700
     assert.equal(await cashier.balanceOf(voting.address), 0);
     assert.equal(await cashier.balanceOf(game.address), 0);
     

@@ -14,16 +14,10 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		VOTE_TYPE content;
 	}
 	mapping (address => Entry[]) private _entries;
-	address[] private _addresses;
 	uint private _betCount;
 	CurrentOdds[] private _currentOdds;
 
-	uint[] private _refunds;
-	uint private _totalRefunds;
-	uint private _totalBettings;
-
-	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, open_time, close_time) {
-		_allowCancel = allow_cancel;
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
 	}
 
 	function oddsList() public view returns(VOTE_TYPE[], uint[]) {
@@ -64,13 +58,6 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 
 		emit Entried(msg.sender, content, volume);
 	}
-	function totalBettings() public view returns(uint) {
-		return _totalBettings;
-	}
-	function totalRefunds() public view returns(uint) {
-		require(_closed);
-		return _totalRefunds;
-	}
 
 	//get bettings content of msg.sender
 	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
@@ -85,7 +72,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	}
 
 	// returns (contents, counts, volumes) tuple
-	function allBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
+	function currentBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
 		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_currentOdds.length);
 		uint i;
 		for(i=0; i<_currentOdds.length; i++)
@@ -175,9 +162,20 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 				}
 			}
 		}
-		
+
 		//remaining coin go to the owner of this game
-		_cashier.transferCoin(this.getOwner(), _totalBettings - _totalRefunds);
+		uint base_profit = _totalBettings + _ownerSupply - _totalRefunds;
+		_cashierFee = IRegulation(_regulation).calcCashierFee(_totalBettings);
+		if(_cashierFee > base_profit) {
+			_cashierFee = base_profit;
+			_ownerRefund = 0;
+		}
+		else
+			_ownerRefund = base_profit - _cashierFee;
+
+		//remaining coin go to the owner of this game
+		_cashier.transferCoin(this.getOwner(), _ownerRefund);
+		_cashier.transferCoin(_cashier, _cashierFee);
 		_closed = true;
 		
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
@@ -209,6 +207,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		if(_ownerSupply>0)
 			_cashier.transferCoin(this.getOwner(), _ownerSupply);
 		_cancelled = true;
+		_closed = true;
 
 		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
 	}

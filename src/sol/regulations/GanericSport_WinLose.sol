@@ -1,11 +1,14 @@
 pragma solidity ^0.4.19;
-import "../games/DivideEqually_V4_R4.sol";
+import "../ExPostGame_V4_R4.sol";
 import "../MajorityVote_R4.sol";
 import "../ETHCashier.sol";
-import "../FixedOddsRegulation.sol";
+import "../ExPostRegulation.sol";
 import "../VoteContractPool.sol";
 
-contract GenericSport_WinLose is FixedOddsRegulation {
+contract GenericSport_WinLose is ExPostRegulation {
+
+	constructor(FeeType owner_ft, uint owner_fv, FeeType cashier_ft, uint cashier_fv) public ExPostRegulation(owner_ft, owner_fv, cashier_ft, cashier_fv) {
+	}
 
     //description of voting content:
     //byte [0]  confiscated game(1), valid game(0)
@@ -22,19 +25,30 @@ contract GenericSport_WinLose is FixedOddsRegulation {
       return 0x01234567890123456789012345678901;
     }
 
-    function calcFixedOddsRefund_V8_R8(bytes8 content, bytes8 truth) public pure returns(int) {
-        if(truth[0]==1) return -1; // confiscated game
+    function calcOddsList_V4_R4(bytes4 truth, bytes4[] votes, uint[] volumes) public view returns(uint[] odds, uint owner_fee) {
+        uint total_vol = 0;
+	uint i = 0;
+	for(i=0; i<volumes.length; i++) total_vol += volumes[i];
 
-        byte home_byte = truth[1]>=truth[2]? byte(1) : byte(0);
+	byte home_byte = truth[1]>=truth[2]? byte(1) : byte(0);
         byte away_byte = truth[1]<=truth[2]? byte(1) : byte(0);
-
-	return (content[1]==home_byte && content[2]==away_byte)? 1 : 0;
+	
+	odds = new uint[](votes.length);
+	owner_fee = calcOwnerFee(total_vol);
+	uint refund = total_vol - owner_fee;
+	for(i=0; i<votes.length; i++) {
+		bytes4 vote = votes[i];
+		if(volumes[i]!=0 && vote[1]==home_byte && vote[2]==away_byte)  //win
+			odds[i] = refund * 1000 / volumes[i]; //permil
+		else //lose
+			odds[i] = 0;
+	}
+	return (odds, owner_fee);
     }
 
     mapping (address => address) internal _gameMemo;
-    address internal _lastGame;
 
-    function deployDivideEquallyGame(string title, address mv_pool, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time, DivideEqually_V4_R4.FeeType cashierfeetype, uint cashierfee, DivideEqually_V4_R4.FeeType ownerfeetype, uint ownerfee) public payable {
+    function deployDivideEquallyGame(string title, address mv_pool, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time) public payable {
 
       VoteContractPool pool = VoteContractPool(mv_pool);
 
@@ -46,16 +60,12 @@ contract GenericSport_WinLose is FixedOddsRegulation {
       ETHCashier ec = ETHCashier(cashier);
       // ec.ownerSupply(vote, owner_supply_coin); //CoinCashier style
       //ec.ownerSupply(vote); //pay owner supply
-      DivideEqually_V4_R4 game = new DivideEqually_V4_R4(title, cashier, vote, address(this), bet_open_time, bet_lock_time, false); //cancel not allowed
-      game.setCashierFee(cashierfeetype, cashierfee);
-      game.setGameOwnerFee(ownerfeetype, ownerfee);
+      ExPostGame_V4_R4 game = new ExPostGame_V4_R4(title, cashier, vote, address(this), bet_open_time, bet_lock_time, false); //cancel not allowed
       _gameMemo[msg.sender] = game;
-      _lastGame = game;
     }
 
     function getLastDeployedGame() public view returns(address) {
       return _gameMemo[msg.sender];
     }
-    function lastGame() public view returns(address) { return _lastGame; }
 
 }

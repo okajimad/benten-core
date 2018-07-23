@@ -9,17 +9,10 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		uint volume; 
 	}
 	mapping (address => Entry[]) internal _entries;
-	address[] internal _addresses;
-	uint[] internal _refunds;
-	uint internal _totalRefunds;
-	uint internal _totalBettings;
-	uint internal _cashierFee;
-	uint internal _ownerRefund;
 	Entry[] internal _bettings;
 
 
-	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time) {
-		_allowCancel = allow_cancel;
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
 	}
 
 	function betBody(address from, VOTE_TYPE content, uint coin) internal {
@@ -41,17 +34,6 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 
 		emit Entried(msg.sender, content, volume);
 	}
-	function totalBettings() public view returns(uint) {
-		return _totalBettings;
-	}
-	function totalRefunds() public view returns(uint) {
-		require(_closed);
-		return _totalRefunds;
-	}
-	function refundTuple() public view returns(address[] a, uint[] v, uint cf, uint ow) {
-		require(_closed);
-		return (_addresses, _refunds, _cashierFee, _ownerRefund);
-	}
 
 	function bettingOf() public view returns(VOTE_TYPE[], uint[]) {
 		Entry[] storage e = _entries[msg.sender];
@@ -64,15 +46,17 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		return (b, v);
 	}
 
-	function currentBettingList() public view returns(VOTE_TYPE[], uint[] ) {
+	function currentBettingList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
 		VOTE_TYPE[] memory candidates = new VOTE_TYPE[](_bettings.length);
+		uint[] memory counts = new uint[](_bettings.length);
 		uint[] memory volumes = new uint[](_bettings.length);
 		for(uint i=0; i<_bettings.length; i++) {
 			Entry storage e = _bettings[i];
 			candidates[i] = e.content;
 			volumes[i] = e.volume;
+			counts[i] += 1;
 		}
-		return (candidates, volumes);
+		return (candidates, counts, volumes);
 	}
 /*
 	function currentBettingAndEstimatedRefundList() public view returns(VOTE_TYPE[], uint[], uint[] ) {
@@ -104,18 +88,16 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		return 0xFFFFFFFF;
 	}
 
-	//Derived class must implement
-	function calculateRefund(VOTE_TYPE content, RESULT_TYPE truth, uint volume) public view returns(uint);
+	//abstract
+	function estimateOdds(VOTE_TYPE vote, RESULT_TYPE truth) public view returns(int);
 
 	function estimateTotalRefund(RESULT_TYPE truth) public view returns(uint) {
 		uint total_refund = 0;
-		for(uint i=0; i<_addresses.length; i++) {
-			address a = _addresses[i];
-			Entry[] storage e = _entries[a];
-			for(uint j=0; j<e.length; j++) {
-				Entry storage ee = e[j];
-				if(ee.volume!=0)
-					total_refund += calculateRefund(ee.content, truth, ee.volume);
+		for(uint i=0; i<_bettings.length; i++) {
+			Entry storage e = _bettings[i];
+			if(e.volume!=0) {
+				int t = estimateOdds(e.content, truth);
+				total_refund += permilMul(e.volume, uint(t));
 			}
 		}
 		return total_refund;
@@ -144,7 +126,11 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			uint refund = 0;
 			for(uint j=0; j<e.length; j++) {
 				Entry storage ee = e[j];
-				refund += calculateRefund(ee.content, truth, ee.volume);
+				int t = estimateOdds(ee.content, truth);
+				if(t == -1)
+					refund += ee.volume; // confiscated game
+				else
+					refund += permilMul(ee.volume, uint(t));
 			}
 			if(refund>0)
 				_cashier.transferCoin(a, refund);
@@ -153,8 +139,13 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		
 		//remaining coin go to the owner of this game
 		uint base_profit = _totalBettings + _ownerSupply - _totalRefunds;
-		_cashierFee = calcCashierFee(base_profit);
-		_ownerRefund = base_profit - _cashierFee;
+		_cashierFee = IRegulation(_regulation).calcCashierFee(_totalBettings);
+		if(_cashierFee > base_profit) {
+			_cashierFee = base_profit;
+			_ownerRefund = 0;
+		}
+		else
+			_ownerRefund = base_profit - _cashierFee;
 
 		_cashier.transferCoin(this.getOwner(), _ownerRefund);
 		_cashier.transferCoin(_cashier, _cashierFee);
@@ -193,12 +184,6 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
 	}
 
-	function calcCashierFee(uint profit) public view returns(uint) {
-		if(_cashierFeeType==FeeType.Value)
-			return profit < _cashierFee? profit : _cashierFee;
-		else
-			return permilMul(profit, _cashierFee);
-	}
 
 
 }

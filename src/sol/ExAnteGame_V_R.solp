@@ -1,0 +1,16 @@
+pragma solidity ^0.4.0;
+import "./FixedOddsGame_V#VOTE_SIZE_R#RESULT_SIZE.sol";
+import "./FixedOddsRegulation.sol";
+
+// odds are defined by regulation before the result is fixed
+contract ExAnteGame ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
+
+	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	}
+
+	function estimateOdds(VOTE_TYPE vote, RESULT_TYPE truth) public view returns(int) {
+		FixedOddsRegulation reg = FixedOddsRegulation(_regulation);
+		return reg.calcFixedOddsRefund_V ##VOTE_SIZE _R ##RESULT_SIZE (vote, truth);
+	}
+
+}
