@@ -12,7 +12,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 	Entry[] internal _bettings;
 
 
-	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
 	}
 
 	function betBody(address from, VOTE_TYPE content, uint coin) internal {
@@ -120,6 +120,8 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		if(_totalRefunds > _totalBettings + _ownerSupply) 
 			ERROR_CASE("owner supply is insufficient")
 
+		CashierBase cashier = CashierBase(_cashier);
+
 		for(i=0; i<_addresses.length; i++) {
 			a = _addresses[i];
 			Entry[] storage e = _entries[a];
@@ -147,8 +149,8 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		else
 			_ownerRefund = base_profit - _cashierFee;
 
-		_cashier.transferCoin(this.getOwner(), _ownerRefund);
-		_cashier.transferCoin(_cashier, _cashierFee);
+		_cashier.transferCoin(getOwner(), _ownerRefund);
+		_cashier.transferCoin(cashier.getOwner(), _cashierFee);
 		_closed = true;
 
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);

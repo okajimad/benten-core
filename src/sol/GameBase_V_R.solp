@@ -31,8 +31,9 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
 	event Cancelled(uint userCount, uint totalBetting, uint totalRefund);
 
-	constructor(string title, address cashier, address result_src, address regulation, uint open_time, uint lock_time, bool allow_cancel) public {
+	constructor(string title, address cashier, address result_src, address regulation, address owner, uint open_time, uint lock_time, bool allow_cancel) public {
 		_title = title;
+		_owner = owner;
 		_cashier = CoinCashier(cashier);
 		_resultSource = ResultAnnouncement_R ##RESULT_SIZE(result_src);
 		_regulation = IRegulation(regulation);

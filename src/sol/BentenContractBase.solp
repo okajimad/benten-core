@@ -64,7 +64,7 @@ enum FeeType {
 // current time is configurable in DEBUG build
 #if DEBUG
     uint internal _now;
-    function setNow(uint t) public onlyOwner {
+    function setNow(uint t) public {
       _now =t;
     }
     function getNow() public view returns(uint) {

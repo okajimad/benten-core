@@ -6,7 +6,7 @@ contract SimpleLottery_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE
 
 	uint private _payoutPermil; // game owner takes constant rate of all bettings
 
-	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
 		_payoutPermil = 1000;
 	}
 

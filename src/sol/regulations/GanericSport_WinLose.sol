@@ -48,7 +48,7 @@ contract GenericSport_WinLose is ExPostRegulation {
 
     mapping (address => address) internal _gameMemo;
 
-    function deployDivideEquallyGame(string title, address mv_pool, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time) public payable {
+    function deployExPostGame_V4_R4(string title, address mv_pool, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time) public {
 
       VoteContractPool pool = VoteContractPool(mv_pool);
 
@@ -57,15 +57,12 @@ contract GenericSport_WinLose is ExPostRegulation {
       pool.pop4();
 
       vote.activate(cashier, address(this), msg.sender, vote_open_time, vote_lock_time);
-      ETHCashier ec = ETHCashier(cashier);
-      // ec.ownerSupply(vote, owner_supply_coin); //CoinCashier style
-      //ec.ownerSupply(vote); //pay owner supply
-      ExPostGame_V4_R4 game = new ExPostGame_V4_R4(title, cashier, vote, address(this), bet_open_time, bet_lock_time, false); //cancel not allowed
+      ExPostGame_V4_R4 game = new ExPostGame_V4_R4(title, cashier, vote, address(this), msg.sender, bet_open_time, bet_lock_time, false); //cancel not allowed
       _gameMemo[msg.sender] = game;
     }
 
-    function getLastDeployedGame() public view returns(address) {
-      return _gameMemo[msg.sender];
+    function getLastDeployedGameOf(address from) public view returns(address) {
+      return _gameMemo[from];
     }
 
 }

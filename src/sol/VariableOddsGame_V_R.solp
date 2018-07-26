@@ -17,7 +17,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	uint private _betCount;
 	CurrentOdds[] private _currentOdds;
 
-	constructor(string title, address cashier, address voting, address regulation, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
 	}
 
 	function oddsList() public view returns(VOTE_TYPE[], uint[]) {
@@ -150,6 +150,8 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		if(_totalRefunds > _totalBettings + _ownerSupply) 
 			ERROR_CASE("supply is insufficient")
 
+		CashierBase cashier = CashierBase(_cashier);
+
 		for(i=0; i<_addresses.length; i++) {
 			a= _addresses[i];
 			Entry[] storage e = _entries[a];
@@ -174,8 +176,8 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 			_ownerRefund = base_profit - _cashierFee;
 
 		//remaining coin go to the owner of this game
-		_cashier.transferCoin(this.getOwner(), _ownerRefund);
-		_cashier.transferCoin(_cashier, _cashierFee);
+		_cashier.transferCoin(getOwner(), _ownerRefund);
+		_cashier.transferCoin(cashier.getOwner(), _cashierFee);
 		_closed = true;
 		
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
