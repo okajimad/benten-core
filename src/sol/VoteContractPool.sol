@@ -15,13 +15,6 @@ contract VoteContractPool {
 			_MajorityVote4.push(v);
 		}
 	}
-	function reserve4_F5() public {
-		address a0 = address(0);
-		for(uint i=0; i<5; i++) {
-			MajorityVote_R4 v = new MajorityVote_R4(a0, a0, a0, 0, 0);
-			_MajorityVote4.push(v);
-		}
-	}
 
 	function remaining4() public view returns(uint) {
 		return _MajorityVote4.length;

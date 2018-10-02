@@ -25,25 +25,23 @@ contract GenericSport_WinLose is ExPostRegulation {
       return 0x01234567890123456789012345678901;
     }
 
-    function calcOddsList_V4_R4(bytes4 truth, bytes4[] votes, uint[] volumes) public view returns(uint[] odds, uint owner_fee) {
-        uint total_vol = 0;
-	uint i = 0;
-	for(i=0; i<volumes.length; i++) total_vol += volumes[i];
-
+    function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers) {
+    
+	bool aborted = truth[0]!=0; // if the game is aborted in real world
 	byte home_byte = truth[1]>=truth[2]? byte(1) : byte(0);
         byte away_byte = truth[1]<=truth[2]? byte(1) : byte(0);
 	
-	odds = new uint[](votes.length);
-	owner_fee = calcOwnerFee(total_vol);
-	uint refund = total_vol - owner_fee;
-	for(i=0; i<votes.length; i++) {
-		bytes4 vote = votes[i];
-		if(volumes[i]!=0 && vote[1]==home_byte && vote[2]==away_byte)  //win
-			odds[i] = refund * 1000 / volumes[i]; //permil
+	answers = new int[](votes.length);
+	for(uint i=0; i<votes.length; i++) {
+		bytes8 vote = votes[i];
+		if(aborted)
+			answers[i] = -1;
+		else if(vote[1]==home_byte && vote[2]==away_byte)  //win
+			answers[i] = 1;
 		else //lose
-			odds[i] = 0;
+			answers[i] = 0;
 	}
-	return (odds, owner_fee);
+	return answers;
     }
 
     mapping (address => address) internal _gameMemo;

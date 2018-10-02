@@ -6,22 +6,10 @@ import "./ExPostRegulation.sol";
 contract ExPostGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE  {
 
 	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
+		_className = "ExPostGame_V#VOTE_SIZE_R#RESULT_SIZE";
 	}
 
-	function estimateOdds(VOTE_TYPE vote, RESULT_TYPE truth) public view returns(int) {
-		ExPostRegulation reg = ExPostRegulation(_regulation);
-
-		uint[] memory ol;
-		uint owner_share;
-		(ol, owner_share) = reg.calcOddsList_V ##VOTE_SIZE _R ##RESULT_SIZE(truth, voteList(), volumeList());
-		for(uint i=0; i<ol.length; i++) {
-			if(_bettings[i].content == vote)
-				return int(ol[i]);
-		}
-		return -1;
-
-	}
-	function voteList() public view returns(VOTE_TYPE[]) {
+	function betList() public view returns(VOTE_TYPE[]) {
 		VOTE_TYPE[] memory r = new VOTE_TYPE[](_bettings.length);
 		for(uint i=0; i<_bettings.length; i++)
 			r[i] = _bettings[i].content;
@@ -32,6 +20,15 @@ contract ExPostGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SI
 		for(uint i=0; i<_bettings.length; i++)
 			r[i] = _bettings[i].volume;
 		return r;
+	}
+	function betAndVolumeList() public view returns(VOTE_TYPE[], uint[]) {
+		VOTE_TYPE[] memory r = new VOTE_TYPE[](_bettings.length);
+		uint[] memory v = new uint[](_bettings.length);
+		for(uint i=0; i<_bettings.length; i++) {
+			r[i] = _bettings[i].content;
+			v[i] = _bettings[i].volume;
+		}
+		return (r, v);
 	}
 
 }

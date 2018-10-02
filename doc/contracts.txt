@@ -1,0 +1,70 @@
+
+BentenContractBase
+  全体のベース
+
+BettingTarget
+  Game, Votingのベース
+　bet, ownerSupply がある。キャッシャーからのコールしか認めない。こうすることで、キャッシャーで保有するコイン残高を使ってユーザからコントラクトへコインが移動することを保証している。
+　betBody, ownerSupplyBodyがそのチェックを通ったあとの本体メソッドになる
+
+--
+【Voting系】
+ResultAnnouncement
+  Votingのベース。投票可能時間の判定機能。最終結果を得るtruth()がabstractになっている
+
+OwnerDeclareResult
+  オーナのみが設定できる正解をもって最終結果とする。これがclose()のかわり
+
+MajorityVote
+　多数決で決め、投票総数＋VotingFeeを正解者で山分け
+　逆転で自動延長、圧倒多数の追加投票禁止、の機能あり
+　払い戻しのうち端数はオーナーのものになるがガス代とどっちがいいか、というのはあるね
+
+【Game系】
+
+GameBase
+　時刻の管理、totalBettings、cashierFeeなどの結果情報フィールド
+　classNameってなんだっけ
+
+FixedOddsGame : GameBase
+　同一結果に賭けた者はすべて同一の払い戻しを受ける。
+　同一人が複数回賭けてもよい
+　estimateOdds(VOTE, RESULT) (abstract) で賭けとその結果に対する払い戻し率をパーミルで返す
+　→これを使ってestimateTotalRefund(RESULT) が機能する
+
+ExPostGame : FixedOddsGame
+　Betting結果が揃ってからオッズの確定するもの(競馬、その他シンプルな勝者層取り系）
+　betList　volumeList　betAndVolumeList　で現在の賭け状況がみれる
+　ExPostRegulation.calcOddsList_V_R に賭け状況と正解を渡し、それぞれの払い戻し率を得る。
+
+ExAnteGame : FixedOddsGame
+　Betting結果がなくても、正解がこれなら払い戻しもこれ、とわかるタイプ。宝くじなど。
+　FixedOddsRegulation.calcFixedOddsRefund_V_R でオッズを返す
+
+VariableOddsGame : GameBase
+　可変オッズ
+　あまり見てない
+
+【Regulation系】
+
+FixedOddsRegulation
+　CashierFeeの設定がある
+　calcFixedOddsRefund_V_R　ファミリーで何個もメソッドがあるがいやらしいな、最もサイズの大きい奴で統一できるならしよう
+
+
+ExPostRegulation : FixedOddsRegulation
+　加えてOwnerFeeの設定がある　賭け状況が確定しなくても払い戻すやつは、Owner利益は自然と計算できるからだ。
+　
+
+GenericSport_WinLose : ExPostRegulation
+　VOTEとRESULTが、０バイト目が正当性チェック、１バイト目がホームチーム、２バイト目がアウェイチームとして判定する
+　デプロイメソッドがある。レギュレーションが、ゲームと投票所のクラスを知っている、という設計。
+
+【Fee計算】
+		uint base_profit = _totalBettings + _ownerSupply - _totalRefunds;
+		_cashierFee = IRegulation(_regulation).calcCashierFee(_totalBettings);
+
+である。つまり、
+ * CashierFeeは総賭金で決まるが、base_profitを超えない。(定額型のCashierFeeもある)
+ * base_profit - cashierFee - votingFeeがgame ownerの取り分
+ * TotalRefundsは、ExPost系では同様に定額・定率で決まる

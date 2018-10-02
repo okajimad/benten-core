@@ -1,6 +1,7 @@
 
 pragma solidity ^0.4.0;
 import "./FixedOddsRegulation.sol";
+import "./IGame.sol";
 
 contract ExPostRegulation is FixedOddsRegulation {
 
@@ -23,13 +24,35 @@ contract ExPostRegulation is FixedOddsRegulation {
 			return permilMul(total_bettings, _ownerFee);
 	}
 
-	function calcOddsList_V4_R4(bytes4 , bytes4[] votes, uint[] ) public view returns(uint[] odds, uint owner_fee) {
-		uint[] memory r = new uint[](votes.length);
-		return (r, 0);
-	}
-	function calcOddsList_V8_R4(bytes4, bytes8[] votes, uint[] ) public view returns(uint[] odds, uint owner_fee) {
-		uint[] memory r = new uint[](votes.length);
-		return (r, 0);
+	// returns refunding odds list
+	function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers);
+
+	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, uint cashier_fee) {
+		bytes8[] memory contents;
+		uint[] memory volumes;
+		uint[] memory count_unused;
+		(contents, volumes, count_unused) = game.currentBettingList_Wide();
+		uint total = 0;
+		uint i;
+		for(i = 0; i<contents.length; i++) {
+			total += volumes[i];
+		}
+		cashier_fee = calcCashierFee(total);
+		uint owner_fee = calcOwnerFee(total - cashier_fee);
+		uint total_refund = total - cashier_fee - owner_fee;
+		int[] memory answer_list =  correctAnswerList_Wide(truth, contents);
+
+		int[] memory odds = new int[](contents.length);
+		for(i = 0; i<contents.length; i++) {
+			int o = answer_list[i];
+			if(o > 0)
+				odds[i] = int(total_refund * 1000 * ( volumes[i] / total ));
+			else if(o == 0)
+				odds[i] = 0;
+			else
+				odds[i] = -1;
+		}
+		return (odds, cashier_fee);
 	}
 
 }

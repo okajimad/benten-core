@@ -2,6 +2,7 @@
 pragma solidity ^0.4.0;
 import "./BentenContractBase.sol";
 import "./IRegulation.sol";
+import "./IGame.sol";
 
 contract FixedOddsRegulation is BentenContractBase, IRegulation {
 
@@ -13,17 +14,6 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 		_cashierFee = fee;
 	}
 
-	//derived class implement one of these function
-	// (calcFixedOddsRefund(content, truth) family
-	function calcFixedOddsRefund_V8_R8(bytes8 , bytes8 ) public pure returns(int) {
-		return 0;
-	}
-	function calcFixedOddsRefund_V4_R4(bytes4 , bytes4 ) public pure returns(int) {
-		return 0;
-	}
-	function calcFixedOddsRefund_V8_R4(bytes8 , bytes4 ) public pure returns(int) {
-		return 0;
-	}
 
 	function cashierFee() external view returns(FeeType, uint) {
 		return (_cashierFeeType, _cashierFee);
@@ -36,5 +26,11 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 		else
 			return permilMul(total_bettings, _cashierFee);
 	}
+
+	/*
+	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.
+	if odds is -1, it means the game result is confiscated.
+	*/
+	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, uint cashier_fee);
 
 }
