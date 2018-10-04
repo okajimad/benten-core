@@ -31,14 +31,19 @@ contract ExPostRegulation is FixedOddsRegulation {
 		bytes8[] memory contents;
 		uint[] memory volumes;
 		uint[] memory count_unused;
-		(contents, volumes, count_unused) = game.currentBettingList_Wide();
+		(contents, count_unused, volumes) = game.currentBettingList_Wide();
 		uint total = 0;
 		uint i;
 		for(i = 0; i<contents.length; i++) {
 			total += volumes[i];
 		}
 		cashier_fee = calcCashierFee(total);
-		uint owner_fee = calcOwnerFee(total - cashier_fee);
+		uint owner_fee = calcOwnerFee(total);
+		//if total bettings are too low, fees are reset to 0
+		if(cashier_fee + owner_fee > total) {
+			owner_fee = 0;
+			cashier_fee = 0;
+		}
 		uint total_refund = total - cashier_fee - owner_fee;
 		int[] memory answer_list =  correctAnswerList_Wide(truth, contents);
 
@@ -46,7 +51,7 @@ contract ExPostRegulation is FixedOddsRegulation {
 		for(i = 0; i<contents.length; i++) {
 			int o = answer_list[i];
 			if(o > 0)
-				odds[i] = int(total_refund * 1000 * ( volumes[i] / total ));
+				odds[i] = int(total_refund * 1000 / volumes[i] );
 			else if(o == 0)
 				odds[i] = 0;
 			else

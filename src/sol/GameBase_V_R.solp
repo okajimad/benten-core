@@ -98,13 +98,12 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		string description;
 	}
 	CandidateDescription[] internal _descriptions;
-	function setDescription(VOTE_TYPE content, string new_description) public onlyOwner {
+	function setDescription(VOTE_TYPE content, string new_description) public  {
 		require(_openTime > getNow());
 		for(uint i=0; i<_descriptions.length; i++) {
 			CandidateDescription storage e = _descriptions[i];
 			if(e.content == content) {
-				e.description = new_description;
-				return;
+				revert(); //overwrite is not permitted
 			}
 		}
 		CandidateDescription memory ne = CandidateDescription(content, new_description);
@@ -118,6 +117,9 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 			}
 		}
 		return "";
+	}
+	function getDescriptionCount() public view returns(uint) {
+		return _descriptions.length;
 	}
 
 	// getDescriptionList() style function is not allowed since 'string[]' cannot be used as return type of function!

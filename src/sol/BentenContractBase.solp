@@ -6,7 +6,7 @@ pragma solidity ^0.4.0;
 contract BentenContractBase  {
 enum FeeType {
 	Value, // fixed value
-	Ratio  // fixed ratio (permil)
+	Ratio // fixed ratio (permil)
 }
     address internal _owner;
     string internal _version;
@@ -58,6 +58,10 @@ enum FeeType {
     }
     function setLastError(string e) public {
       _lastError = e;
+    }
+#else
+    function getLastError() public pure returns(string) {
+      return "";
     }
 #endif
 
