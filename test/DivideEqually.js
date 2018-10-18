@@ -28,7 +28,7 @@ contract('Basic games', function(accounts) {
     await cashier.bet4(game.address, c1, 300, {from:a1})
     assert.equal(await game.title(), "さゆ");
     //this test gamble returns all bets to winner. if a1 wins, a1 receives 700
-    await cashier.bet4(voting.address, c1, 200, {from:a0});
+    await cashier.bet4(voting.address, "0x05, 200, {from:a0});
     
     assert.equal(await cashier.balanceOf(a0), 300);
     assert.equal(await cashier.balanceOf(a1), 1200);

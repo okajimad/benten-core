@@ -6,3 +6,7 @@ interface IGame  {
 
 	function currentBettingList_Wide() public view returns(bytes8[], uint[], uint[]);
 }
+
+interface IVariableOddsGame { //interfaces canot inherit!
+	function estimateTotalRefund_Wide(bytes8 result) public view returns(uint);
+}

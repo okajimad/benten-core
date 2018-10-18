@@ -100,7 +100,6 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			ERROR_CASE("game is already closed")
 
 		uint i;
-		address a;
 		RESULT_TYPE truth = _resultSource.truth(); //get correct answer
 
 		VOTE_TYPE[] memory content_list;
@@ -108,29 +107,16 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		uint[] memory counts;
 		(content_list, bettings, counts) = currentBettingList();
 		int[] memory refund_odds;
-		(refund_odds, _cashierFee) = FixedOddsRegulation(_regulation).calcRefundOdds(this, truth);
+		int totalRefunds_;
+		int cashierFee_;
+		int ownerRefund_;
+		(refund_odds, totalRefunds_, cashierFee_, ownerRefund_) = FixedOddsRegulation(_regulation).calcRefundOdds(this, truth);
 
 		CashierBase cashier = CashierBase(_cashier);
 
 		_totalRefunds = 0;
 		for(i=0; i<_addresses.length; i++) {
-			a = _addresses[i];
-			Entry[] storage e = _entries[a];
-			uint refund = 0;
-			for(uint j=0; j<e.length; j++) {
-				Entry storage ee = e[j];
-				uint32 index = findOrCreate(ee.content);
-				int odds = refund_odds[index];
-
-				if(odds == -1)
-					refund += ee.volume; // confiscated game
-				else
-					refund += permilMul(ee.volume, uint(odds));
-			}
-			if(refund>0)
-				_cashier.transferCoin(a, refund);
-			_totalRefunds += refund;
-			_refunds.push(refund);
+			closePerUser(_addresses[i], refund_odds);
 		}
 		if(_totalRefunds > _totalBettings + _ownerSupply) 
 			ERROR_CASE("owner supply is insufficient")
@@ -147,6 +133,25 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		_closed = true;
 
 		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
+	}
+	
+	function closePerUser(address a, int[] refund_odds) private {
+		Entry[] storage e = _entries[a];
+		uint refund_per_addr = 0;
+		for(uint j=0; j<e.length; j++) {
+			Entry storage ee = e[j];
+			uint32 index = findOrCreate(ee.content);
+			int odds = refund_odds[index];
+
+			if(odds == -1)
+				refund_per_addr += ee.volume; // confiscated game
+			else
+				refund_per_addr += permilMul(ee.volume, uint(odds));
+		}
+		if(refund_per_addr>0)
+			_cashier.transferCoin(a, refund_per_addr);
+		_totalRefunds += refund_per_addr;
+		_refunds.push(refund_per_addr);
 	}
 
 	function cancelGame() public onlyOwner {

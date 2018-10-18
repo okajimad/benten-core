@@ -11,6 +11,7 @@ contract ExPostRegulation is FixedOddsRegulation {
 	constructor(FeeType owner_ft, uint owner_fv, FeeType cashier_ft, uint cashier_fv) public FixedOddsRegulation(cashier_ft, cashier_fv) {
 		_ownerFeeType = owner_ft;
 		_ownerFee = owner_fv;
+		_version = "ExPostRegulation.1";
 	}
 
 	function ownerFee() external view returns(FeeType, uint) {
@@ -27,17 +28,13 @@ contract ExPostRegulation is FixedOddsRegulation {
 	// returns refunding odds list
 	function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers);
 
-	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, uint cashier_fee) {
+	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, int total_refund_, int cashier_fee_, int owner_fee_) {
 		bytes8[] memory contents;
 		uint[] memory volumes;
 		uint[] memory count_unused;
 		(contents, count_unused, volumes) = game.currentBettingList_Wide();
-		uint total = 0;
-		uint i;
-		for(i = 0; i<contents.length; i++) {
-			total += volumes[i];
-		}
-		cashier_fee = calcCashierFee(total);
+		uint total = game.totalBettings();
+		uint cashier_fee = calcCashierFee(total);
 		uint owner_fee = calcOwnerFee(total);
 		//if total bettings are too low, fees are reset to 0
 		if(cashier_fee + owner_fee > total) {
@@ -45,10 +42,13 @@ contract ExPostRegulation is FixedOddsRegulation {
 			cashier_fee = 0;
 		}
 		uint total_refund = total - cashier_fee - owner_fee;
-		int[] memory answer_list =  correctAnswerList_Wide(truth, contents);
 
+		return (makeOddsList(contents, truth, total_refund, volumes), int(total_refund), int(cashier_fee), int(owner_fee));
+	}
+	function makeOddsList(bytes8[] contents, bytes8 truth, uint total_refund, uint[] volumes) private view returns(int[]) {
+		int[] memory answer_list =  correctAnswerList_Wide(truth, contents);
 		int[] memory odds = new int[](contents.length);
-		for(i = 0; i<contents.length; i++) {
+		for(uint i = 0; i<contents.length; i++) {
 			int o = answer_list[i];
 			if(o > 0)
 				odds[i] = int(total_refund * 1000 / volumes[i] );
@@ -57,7 +57,7 @@ contract ExPostRegulation is FixedOddsRegulation {
 			else
 				odds[i] = -1;
 		}
-		return (odds, cashier_fee);
+		return odds;
 	}
 
 }

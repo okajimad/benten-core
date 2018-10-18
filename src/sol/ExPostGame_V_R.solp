@@ -8,7 +8,7 @@ contract ExPostGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SI
 	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
 		_className = "ExPostGame_V#VOTE_SIZE_R#RESULT_SIZE";
 	}
-
+/*
 	function betList() public view returns(VOTE_TYPE[]) {
 		VOTE_TYPE[] memory r = new VOTE_TYPE[](_bettings.length);
 		for(uint i=0; i<_bettings.length; i++)
@@ -30,5 +30,5 @@ contract ExPostGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is FixedOddsGame_V ##VOTE_SI
 		}
 		return (r, v);
 	}
-
+*/
 }

@@ -26,7 +26,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	uint internal _totalRefunds;
 	uint internal _cashierFee;
 	uint internal _ownerRefund;
-	uint[] internal _refunds;
+	uint[] internal _refunds; //corresponding to _addresses
 
 	event Entried(address indexed user, VOTE_TYPE content, uint volume);
 	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
@@ -100,15 +100,24 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	CandidateDescription[] internal _descriptions;
 	function setDescription(VOTE_TYPE content, string new_description) public  {
 		require(_openTime > getNow());
+		
 		for(uint i=0; i<_descriptions.length; i++) {
 			CandidateDescription storage e = _descriptions[i];
 			if(e.content == content) {
-				revert(); //overwrite is not permitted
+				revert(); //overwriting is not permitted
 			}
 		}
 		CandidateDescription memory ne = CandidateDescription(content, new_description);
 		_descriptions.push(ne);
 	}
+	function setDescription_Multiple(VOTE_TYPE content1, string new_description1, VOTE_TYPE content2, string new_description2, VOTE_TYPE content3, string new_description3, VOTE_TYPE content4, string new_description4, VOTE_TYPE content5, string new_description5) public  {
+		if(bytes(new_description1).length > 0) setDescription(content1, new_description1);
+		if(bytes(new_description2).length > 0) setDescription(content2, new_description2);
+		if(bytes(new_description3).length > 0) setDescription(content3, new_description3);
+		if(bytes(new_description4).length > 0) setDescription(content4, new_description4);
+		if(bytes(new_description5).length > 0) setDescription(content5, new_description5);
+	}
+	
 	function getDescription(VOTE_TYPE content) public view returns(string) {
 		for(uint i=0; i<_descriptions.length; i++) {
 			CandidateDescription storage e = _descriptions[i];

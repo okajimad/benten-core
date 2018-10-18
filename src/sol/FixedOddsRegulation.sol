@@ -12,6 +12,7 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 	constructor(FeeType ft, uint fee) public {
 		_cashierFeeType = ft;
 		_cashierFee = fee;
+		_version = "FixedOddsRegulation(abstract)";
 	}
 
 
@@ -31,6 +32,6 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.
 	if odds is -1, it means the game result is confiscated.
 	*/
-	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, uint cashier_fee);
+	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds, int total_refund, int cashier_fee, int owner_fee);
 
 }
