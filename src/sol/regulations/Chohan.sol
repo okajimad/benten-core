@@ -46,23 +46,4 @@ contract ChohanRegulation is ExAnteRegulation {
 	}
 
 
-    mapping (address => address) internal _gameMemo;
-
-    function deployExAnteGame_V4_R4(string title, address mv_pool, address cashier, uint bet_open_time, uint bet_lock_time, uint vote_open_time, uint vote_lock_time) public {
-
-      VoteContractPool pool = VoteContractPool(mv_pool);
-
-      MajorityVote_R4 vote = MajorityVote_R4(pool.peek4()); //new MajorityVote_R4(cashier, address(this), msg.sender, vote_open_time, vote_lock_time);
-      if(vote==address(0)) revert();
-      pool.pop4();
-
-      vote.activate(cashier, address(this), msg.sender, vote_open_time, vote_lock_time);
-      ExAnteGame_V4_R4 game = new ExAnteGame_V4_R4(title, cashier, vote, address(this), msg.sender, bet_open_time, bet_lock_time, false); //cancel not allowed
-      _gameMemo[msg.sender] = game;
-    }
-
-    function getLastDeployedGameOf(address from) public view returns(address) {
-      return _gameMemo[from];
-    }
-
 }

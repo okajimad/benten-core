@@ -2,6 +2,9 @@
 pragma solidity ^0.4.0;
 import "./FixedOddsRegulation.sol";
 import "./IGame.sol";
+import "./VoteContractPool.sol";
+import "./MajorityVote_R4.sol";
+import "./ExPostGame_V4_R4.sol";
 
 contract ExPostRegulation is FixedOddsRegulation {
 
@@ -59,5 +62,6 @@ contract ExPostRegulation is FixedOddsRegulation {
 		}
 		return odds;
 	}
+
 
 }

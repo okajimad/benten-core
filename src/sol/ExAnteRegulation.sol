@@ -2,6 +2,9 @@
 pragma solidity ^0.4.0;
 import "./FixedOddsRegulation.sol";
 import "./IGame.sol";
+import "./VoteContractPool.sol";
+import "./MajorityVote_R4.sol";
+import "./ExAnteGame_V4_R4.sol";
 
 contract ExAnteRegulation is FixedOddsRegulation {
 
@@ -34,5 +37,6 @@ contract ExAnteRegulation is FixedOddsRegulation {
 
 		return (odds, int(total_refund), int(cashier_fee), int(total_bet) - int(total_refund) - int(cashier_fee));
 	}
+
 
 }

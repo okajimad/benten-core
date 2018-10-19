@@ -2,6 +2,8 @@ pragma solidity ^0.4.0;
 import './BettingTarget_V8.sol';
 import './BettingTarget_V4.sol';
 import './CashierBase.sol';
+import './IGame.sol';
+import './MajorityVote_R4.sol';
 
 //ETHCashier omits deposit/withdraw feature.
 //now bet() is payable and transferCoin() combines ETH transfer
@@ -73,5 +75,11 @@ contract ETHCashier is CashierBase  {
 		b.ownerSupply(coin);
 	}
 
+	function deployAndSetVoting_R4(address game_, address regulation, uint vote_open_time, uint vote_lock_time) public payable {
+		MajorityVote_R4 vote = new MajorityVote_R4(address(this), regulation, msg.sender, vote_open_time, vote_lock_time);
+		IGame game = IGame(game_);
+		game.setResultSource(vote);
+		ownerSupply(vote);
+	}
 
 }

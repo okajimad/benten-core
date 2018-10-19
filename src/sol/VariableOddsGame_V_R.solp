@@ -34,8 +34,35 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	}
 
 	function updateOdds(VOTE_TYPE content, uint32 value) public onlyOwner {
+		if(!betAcceptable()) 
+			ERROR_CASE("betting not acceptable")
 		uint32 index = findOrCreateOdds(content);
 		_currentOdds[index].odds = value;
+	}
+	function updateOdds_Multi(VOTE_TYPE content1, uint32 value1, VOTE_TYPE content2, uint32 value2, VOTE_TYPE content3, uint32 value3, VOTE_TYPE content4, uint32 value4, VOTE_TYPE content5, uint32 value5) public onlyOwner {
+		if(!betAcceptable()) 
+			ERROR_CASE("betting not acceptable")
+		uint32 index;
+		if(value1 > 0) {
+			index = findOrCreateOdds(content1);
+			_currentOdds[index].odds = value1;
+		}
+		if(value2 > 0) {
+			index = findOrCreateOdds(content2);
+			_currentOdds[index].odds = value2;
+		}
+		if(value3 > 0) {
+			index = findOrCreateOdds(content3);
+			_currentOdds[index].odds = value3;
+		}
+		if(value4 > 0) {
+			index = findOrCreateOdds(content4);
+			_currentOdds[index].odds = value4;
+		}
+		if(value5 > 0) {
+			index = findOrCreateOdds(content5);
+			_currentOdds[index].odds = value5;
+		}
 	}
 
 	function betBody(address from, VOTE_TYPE content, uint coin) internal {
@@ -56,6 +83,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		if(new_entry) _addresses.push(from);
 
 		_betCount++;
+		_totalBettings += volume;
 
 		emit Entried(msg.sender, content, volume);
 	}

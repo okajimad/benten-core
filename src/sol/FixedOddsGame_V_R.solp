@@ -10,6 +10,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		uint volume; 
 	}
 	mapping (address => Entry[]) internal _entries;
+	uint private _betCount;
 	Entry[] internal _bettings;
 
 
@@ -31,6 +32,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 
 		uint32 index = findOrCreate(content);
 		_bettings[index].volume += volume;
+		_betCount++;
 		_totalBettings += volume;
 
 		emit Entried(msg.sender, content, volume);

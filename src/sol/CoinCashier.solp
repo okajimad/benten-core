@@ -2,6 +2,8 @@ pragma solidity ^0.4.0;
 import './BettingTarget_V8.sol';
 import './BettingTarget_V4.sol';
 import './CashierBase.sol';
+import './MajorityVote_R4.sol';
+import './IGame.sol';
 
 contract CoinCashier is CashierBase  {
 
@@ -59,6 +61,13 @@ contract CoinCashier is CashierBase  {
 		transferCoin(msg.sender, target, coin);
 		// BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
 		b.ownerSupply(coin);
+	}
+
+	function deployAndSetVoting_R4(address game_, address regulation, uint vote_open_time, uint vote_lock_time, uint owner_supply) public {
+		MajorityVote_R4 vote = new MajorityVote_R4(address(this), regulation, msg.sender, vote_open_time, vote_lock_time);
+		IGame game = IGame(game_);
+		game.setResultSource(vote);
+		ownerSupply(vote, owner_supply);
 	}
 
 }

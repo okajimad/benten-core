@@ -76,6 +76,10 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	function resultSource() public view returns(address) {
 		return _resultSource;
 	}
+	function setResultSource(address source) onlyOwnerOrCashier {
+		if(_resultSource != address(0)) revert(); //one time registration is allowed
+		_resultSource = ResultAnnouncement_R ##RESULT_SIZE (source);
+	}
 	function getOwnerSupply() public view onlyOwner returns(uint) {
 		return _ownerSupply;
 	}

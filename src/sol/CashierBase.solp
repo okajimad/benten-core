@@ -125,6 +125,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 
 		emit Withdraw(to, coin);
 	}
+/*
 	//list all loans
 	function loanList() public view onlyOwner returns(address[], uint[] )  {
 		address[] memory ad = new address[](_borrowers.length);
@@ -183,6 +184,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 
 		_poolVolume += coin;
 	}
+*/
 	function transferCoin(address from, address to, uint coin) internal {
 		if(coin==0)
 			return;
@@ -228,7 +230,6 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		BettingTarget_V8 t = BettingTarget_V8(target);
 		t.close();
 	}
-
 	//Verify an address is trusted contract
 	function verifyTarget(address target) public view returns(bool) {
 		bytes32 h = hashContract(target);
@@ -241,7 +242,6 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	function addTrustedContract(address target) public onlyOwner {
 		_trustedHashes.push(hashContract(target));
 	}
-
 	function isContract(address addr) private view returns (bool is_contract) {
 		uint length;
 		assembly {
@@ -262,4 +262,5 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		}
 		return sha256(buf);
 	}
+
 }

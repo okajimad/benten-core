@@ -1,7 +1,12 @@
 
 pragma solidity ^0.4.0;
-import "./FixedOddsRegulation.sol";
 import "./IGame.sol";
+import "./VariableOddsGame_V4_R4.sol";
+import "./MajorityVote_R4.sol";
+import "./ExPostGame_V4_R4.sol";
+import "./VoteContractPool.sol";
+import "./BentenContractBase.sol";
+import "./IRegulation.sol";
 
 contract VariableOddsRegulation is BentenContractBase, IRegulation {
 
@@ -13,6 +18,15 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		_cashierFee = fee;
 		_version = "VariableOddsRegulation";
 	}
+    function description() public pure returns(string) {
+      return "Benten betting regulation for Soccer";
+    }
+    function url() public pure returns (string) {
+      return "https://.....";
+    }
+    function documentHash() public pure returns (bytes32) {
+      return 0x01234567890123456789012345678901;
+    }
 
 
 	function cashierFee() external view returns(FeeType, uint) {
@@ -47,10 +61,11 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		}
 		
 		int[] memory odds = new int[](contents.length);
-		for(uint i=0; i<odds.length; i++)
+		for(uint i=0; i<odds.length; i++) 
 			if(contents[i] == truth) odds[i] = int(total_refund * 1000 / volumes[i]);
 
 		return (odds, int(total_refund), int(cashier_fee), int(total_bet) - int(total_refund) - int(cashier_fee));
 	}
+
 
 }
