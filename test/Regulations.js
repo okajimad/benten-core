@@ -1,6 +1,6 @@
 
-var DreamJumbo = artifacts.require("DreamJumboLottery_JPN");
-
+var GenericSport_VariableOdds = artifacts.require("GenericSport_VariableOdds");
+ 
 function makeRottelyNum(a, b) {
   //solidity type bytesN is represented as Javascript string '0xXXXX....'
   var t = (a * 100000 + b).toString(16);
@@ -8,21 +8,15 @@ function makeRottelyNum(a, b) {
   return "0x"+t;
 }
 
-contract('DreamJumbo', function(accounts) {
-  it("dj1", async function() {
+contract('GenericSport_VariableOdds', function(accounts) {
+  it("f", async function() {
     var a0 = accounts[0];
-    try {
-    console.log(makeRottelyNum(1, 0));
-    var dj = await DreamJumbo.new({from:a0});
-    var x = await dj.check(makeRottelyNum(1, 101),makeRottelyNum(1, 100));
-    console.log(x.toNumber());
-    //assert.equal(1, await cashier.getAccountCount());
-    //assert.equal(await cashier.getPoolVolume(), 9500);
-    console.log("FINISH!");
-    }
-    catch(e) {
-    	console.log("Error / " + e.toString());
-    }
+    var r = await GenericSport_VariableOdds.new(0, 0, {from:a0});
+
+    assert.equal(await r.convertVoteResultToBet("0x0003000000000000"), "0x0001000000000000");
+    assert.equal(await r.convertVoteResultToBet("0x0000030000000000"), "0x0000010000000000");
+    assert.equal(await r.convertVoteResultToBet("0x0003030000000000"), "0x0001010000000000");
+    assert.equal(await r.convertVoteResultToBet("0x0100000000000000"), "0x0101010000000000");
   });
 });
 	

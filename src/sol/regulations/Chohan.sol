@@ -8,7 +8,7 @@ import "../VoteContractPool.sol";
 contract ChohanRegulation is ExAnteRegulation {
 
     function description() public pure returns(string) {
-      return "Benten betting regulation for Soccer";
+      return "Benten betting regulation for Cho-han";
     }
     function url() public pure returns (string) {
       return "https://.....";

@@ -41,12 +41,20 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 			return permilMul(total_bettings, _cashierFee);
 	}
 
+	// betting content may be simpler than voting result
+	// for example, in sport games, following case is usual: [voting content:actual score] [betting content: select winner] 
+	function convertVoteResultToBet(bytes8 truth) public pure returns(bytes8) {
+		return truth;
+	}
+
 	/*
 	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.
 	if odds is -1, it means the game result is confiscated.
 	*/
 	function calcRefundOdds(IGame game_, bytes8 truth) public view returns(int[] permil_average_odds, int total_refund_, int cashier_fee_, int owner_fee) {
 		
+		truth = convertVoteResultToBet(truth);
+
 		uint total_bet = game_.totalBettings();
 
 		bytes8[] memory contents;

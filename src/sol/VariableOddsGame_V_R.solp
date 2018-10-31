@@ -124,7 +124,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		}
 		return (candidates, counts, volumes);
 	}
-	function findOrCreateOdds(VOTE_TYPE content) private returns(uint32) {
+	function findOrCreateOdds(VOTE_TYPE content) internal returns(uint32) {
 		for(uint i=0; i<_currentOdds.length; i++) {
 			if(content == _currentOdds[i].content)
 				return uint32(i);
@@ -132,7 +132,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		_currentOdds.push(CurrentOdds(0, content));
 		return uint32(_currentOdds.length-1);
 	}
-	function findOddsIndex(VOTE_TYPE content) private view returns(int32) {
+	function findOddsIndex(VOTE_TYPE content) internal view returns(int32) {
 		for(uint i=0; i<_currentOdds.length; i++) {
 			if(content == _currentOdds[i].content)
 				return int32(i);

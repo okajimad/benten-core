@@ -75,9 +75,9 @@ contract ETHCashier is CashierBase  {
 		b.ownerSupply(coin);
 	}
 
-	function deployAndSetVoting_R4(address game_, address regulation, uint vote_open_time, uint vote_lock_time) public payable {
-		MajorityVote_R4 vote = new MajorityVote_R4(address(this), regulation, msg.sender, vote_open_time, vote_lock_time);
+	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time) public payable {
 		IGame game = IGame(game_);
+		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time);
 		game.setResultSource(vote);
 		ownerSupply(vote);
 	}

@@ -23,9 +23,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	uint private _refundFraction;
 
 	uint private _timeExtensionOnReversal;
+	uint private _lockTimeExtensionCount;
 
 	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
-	event Reversed(address indexed voter, RESULT_TYPE content, uint volume);
+	event MajorityReversal(address indexed voter, RESULT_TYPE content, uint volume);
+	event NoMajority();
 
 	constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
 		_truthIndex = UNDECIDED;
@@ -55,6 +57,9 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	function votingFee() public view returns(uint) {
 		return _votingFee;
 	}
+	function lockTimeExtensionCount() public view returns(uint) {
+		return _lockTimeExtensionCount;
+	}
 	function betBody(address from, RESULT_TYPE content, uint coin) internal {
 		vote(from, content, coin);
 	}
@@ -74,14 +79,15 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 			uint major_total = currentVotingOf(major_index);
 			// if all votings are unlimited, voting fee cannot pay even gas of voting.
 			// to reserve voters profit, additional votes for 99% majority is rejected.
-			if(index==major_index && isOccupiedByMajority())
+			if(index==major_index && majorityRatioPermil() > 990)
 				ERROR_CASE("Existing Voter Profit Protect")
 
 			// in case of reversals ( it may be malicious! ), the lock time is extended automatically.
 			// the other justice voters get a chance of steal the malicious votes.
 			if(index!=major_index && currentVotingOf(index)+volume >= major_total) {
-				emit Reversed(from, content, volume);
+				emit MajorityReversal(from, content, volume);
 				_lockTime += _timeExtensionOnReversal;
+				_lockTimeExtensionCount++;
 			}
 
 		}
@@ -127,10 +133,12 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		}
 		return major_index;
 	}
-	function isOccupiedByMajority() public view returns(bool) {
+	function majorityRatioPermil() public view returns(uint) {
+		if(_totalVote==0) return 0;
+
 		uint32 major_index = currentMajorIndex();
 		uint major_total = currentVotingOf(major_index);
-		return major_total * 100 >= (_totalVote + _votingFee) * 99;
+		return major_total * 1000 / _totalVote;
 	}
 
 	function currentVotingList() public view returns(RESULT_TYPE[], uint[] ) {
@@ -151,10 +159,15 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	function close() public onlyOwnerOrCashier {
 		if(getNow() < _lockTime)
 			ERROR_CASE("current time is before voting close time")
-		if(_totalVote==0)
-		    ERROR_CASE("no votes")
 		if(_closed)
 			ERROR_CASE("voting is already closed")
+		if(majorityRatioPermil() < 900) {
+			emit NoMajority();
+			_lockTime += _timeExtensionOnReversal;
+			_lockTimeExtensionCount++;
+			return;
+		}
+		
 
 		uint32 max_index = 0;
 		uint max = 0;

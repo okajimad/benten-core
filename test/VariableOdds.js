@@ -12,17 +12,13 @@ contract('Variable Odds', function(accounts) {
   var a1 = accounts[1];
   it("basic", async function() {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
-    console.log("D0");
 	var reg = await Regulation.new(0, 0, {from:a0, gas:99999999999, gasPrice:1 });
-    console.log("D1");
 	var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.address, a0, now+120, now+180, {from:a0});
-    console.log("D2");
 	var game = await VariableOdds.new("test", cashier.address, voting.address, reg.address, a0, now, now+60, true, {from:a0});
-    console.log("D3");
 	var c0 = "0x01000000";
 	var c1 = "0x00010000";
-
+	
     await cashier.deposit({from:a0, value:1000});
     await cashier.deposit({from:a1, value:1000});
     await cashier.ownerSupply(voting.address, 100, {from:a0});

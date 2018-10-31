@@ -7,6 +7,8 @@ interface IGame  {
 	function currentBettingList_Wide() public view returns(bytes8[], uint[], uint[]);
 
 	function setResultSource(address source) public;
+
+	function regulation() public view returns(address);
 }
 
 interface IVariableOddsGame { //interfaces canot inherit!

@@ -48,12 +48,12 @@ contract('Basic games', function(accounts) {
     assert.equal(b0[1], 400);
     assert.equal(b1[1], 300);
     
-    const refund_cho = ut.formatRefundOdds(await reg.calcRefundOdds(game.address, "0x00000101")))[0];
-    assert.equal(reund_cho[0], 1900);
-    assert.equal(reund_cho[1], 0);
+    const refund_cho = ut.formatRefundOdds(await reg.calcRefundOdds(game.address, "0x00000101"))[0];
+    assert.equal(refund_cho[0], 1900);
+    assert.equal(refund_cho[1], 0);
     const refund_han = ut.formatRefundOdds(await reg.calcRefundOdds(game.address, "0x00000102"))[0];
-    assert.equal(reund_han[0], 0);
-    assert.equal(reund_han[1], 1900);
+    assert.equal(refund_han[0], 0);
+    assert.equal(refund_han[1], 1900);
 
     //this test gamble returns 1.9 times refund for winner
     await voting.setNow(now+150, {from:a0});
@@ -66,10 +66,11 @@ contract('Basic games', function(accounts) {
     assert.equal(await game.isClosed(), false);
     assert.equal(await voting.voteAcceptable(), false);
 	voting.close({from:a0});
-    assert.equal(await cashier.balanceOf(a0), 600);
-    assert.equal(await cashier.balanceOf(a1), 700);
-    assert.equal(await cashier.balanceOf(voting.address), 0);
-    assert.equal(await cashier.balanceOf(game.address), 700);
+	console.log(await voting.getLastError());
+    assert.equal(ut.equalRoughly(await cashier.balanceOf(a0), 600, 1));
+    assert.equal(ut.equalRoughly(await cashier.balanceOf(a1), 700, 1));
+    assert.equal(ut.equalRoughly(await cashier.balanceOf(voting.address), 0, 1));
+    assert.equal(ut.equalRoughly(await cashier.balanceOf(game.address), 700, 1));
     
     
 	await game.close({from:a0});
