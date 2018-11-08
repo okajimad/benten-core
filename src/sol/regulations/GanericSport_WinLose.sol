@@ -25,6 +25,11 @@ contract GenericSport_WinLose is ExPostRegulation {
       return 0x01234567890123456789012345678901;
     }
 
+	function gameClass() public pure returns(string) {
+		return "ExPostGame_V4_R4";
+	}
+
+
     function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers) {
     
 	bool aborted = truth[0]!=0; // if the game is aborted in real world

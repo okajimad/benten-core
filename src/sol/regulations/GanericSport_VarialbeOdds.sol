@@ -13,4 +13,8 @@ contract GenericSport_VariableOdds is VariableOddsRegulation {
 		return v | (h >> 8) | (a >> 16);
 	}
 
+	function gameClass() public pure returns(string) {
+		return "GenericSport_VariableOddsGame";
+	}
+
 }

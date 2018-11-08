@@ -13,6 +13,8 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 
 	uint private _votingFee;
 	uint private _totalVote;
+	uint private _freeVoteUnit; // unit amount of coins for free votings
+	uint private _freeVoteRemainCount; // remaining count of free votings
 	RESULT_TYPE[] private _candidates;
 
 	//filled at the time of voting lock
@@ -25,15 +27,23 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	uint private _timeExtensionOnReversal;
 	uint private _lockTimeExtensionCount;
 
+	bool private _checkMajorityOnClose; // if this flag is true and 90% majority does not exist, lock time is extended
+
 	event Voted(address indexed voter, RESULT_TYPE content, uint volume);
 	event MajorityReversal(address indexed voter, RESULT_TYPE content, uint volume);
 	event NoMajority();
 
 	constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
 		_truthIndex = UNDECIDED;
-		_timeExtensionOnReversal = 30 minutes;
+		_timeExtensionOnReversal = 60 minutes;
 		_version = "MajorityVote.0";
+		_checkMajorityOnClose = true;
 	}
+#if DEBUG
+	function setCheckMajorityOnClose(bool v) public {
+		_checkMajorityOnClose = v;
+	}
+#endif
 
 	//owner is changable if current owner is null.
 	//this feature is used by contract deployment by regulation or web server
@@ -79,7 +89,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 			uint major_total = currentVotingOf(major_index);
 			// if all votings are unlimited, voting fee cannot pay even gas of voting.
 			// to reserve voters profit, additional votes for 99% majority is rejected.
-			if(index==major_index && majorityRatioPermil() > 990)
+			if(index==major_index && majorityRatioPermil() >= 990)
 				ERROR_CASE("Existing Voter Profit Protect")
 
 			// in case of reversals ( it may be malicious! ), the lock time is extended automatically.
@@ -97,7 +107,6 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		bool new_voter = ch.volume==0;
 		// in case of multiple votes, the last vote content is valid. volume is total votes.
 		ch.index = index;
-		//uint current_volume = ch.volume;
 		ch.volume = ch.volume + volume;
 			
 		if(new_voter)
@@ -138,16 +147,17 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 
 		uint32 major_index = currentMajorIndex();
 		uint major_total = currentVotingOf(major_index);
-		return major_total * 1000 / _totalVote;
+		return major_total * 1000 / (_totalVote + _votingFee + ( _freeVoteUnit * _freeVoteRemainCount ) );
 	}
 
 	function currentVotingList() public view returns(RESULT_TYPE[], uint[] ) {
-		uint[] memory volumes = new uint[](_candidates.length);
+		uint[] memory volumes = new uint[](_candidates.length + 1);
 		for(uint i=0; i<_addresses.length; i++) {
 			address a = _addresses[i];
 			Vote storage v = _voters[a];
 			volumes[v.index] += v.volume;
 		}
+		volumes[ _candidates.length ] = _votingFee + ( _freeVoteUnit * _freeVoteRemainCount );
 		return (_candidates, volumes);
 	}
 	// bytes[] is not allowed by solidity compiler. then use fixed size instead.
@@ -155,20 +165,39 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		return _candidates;
 	}
 
+	// free voting feature
+	function setFreeVotings(uint unit, uint count) public onlyOwner {
+		if(_freeVoteUnit == 0) _freeVoteUnit = unit; // _freeVoteUnit is configurable only first time
+		if(_freeVoteUnit * count > _votingFee) 
+			ERROR_CASE("insufficient voting fee reservation")
+
+		_votingFee -= _freeVoteUnit * count;
+		_freeVoteRemainCount += count;
+	}
+	function getFreeVotings() public view returns(uint, uint) {
+		return (_freeVoteUnit, _freeVoteRemainCount);
+	}
+	function freeVote(RESULT_TYPE content) public {
+		if(_freeVoteRemainCount==0 || _freeVoteUnit==0) revert();
+		_freeVoteRemainCount--;
+		if(!voteAcceptable()) //voting owner can vote any time to protect from malicious voting
+			ERROR_CASE("voting is not acceptable")
+		
+		vote(msg.sender, content, _freeVoteUnit);
+	}
+
 	//Close Voting
-	function close() public onlyOwnerOrCashier {
+	function close() public onlyOwnerOrCashier { 
 		if(getNow() < _lockTime)
 			ERROR_CASE("current time is before voting close time")
 		if(_closed)
 			ERROR_CASE("voting is already closed")
-		if(majorityRatioPermil() < 900) {
+		if(_checkMajorityOnClose && majorityRatioPermil() < 900) {
 			emit NoMajority();
 			_lockTime += _timeExtensionOnReversal;
 			_lockTimeExtensionCount++;
 			return;
 		}
-		
-
 		uint32 max_index = 0;
 		uint max = 0;
 		uint total = 0;
@@ -178,7 +207,8 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		uint[] memory volumes = new uint[](_candidates.length);
 		for(i=0; i<_addresses.length; i++) {
 			a = _addresses[i];
-			volumes[i] += _voters[a].volume;
+			Vote storage v = _voters[a];
+			volumes[v.index] += v.volume;
 		}
 
 		for(i=0; i<volumes.length; i++) {
@@ -191,22 +221,23 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		_finalVoteVolume = total;
 		_truthIndex = max_index;
 
-		uint fv = _finalVoteVolume + _votingFee;
+		uint fv = _finalVoteVolume + _votingFee + (_freeVoteRemainCount * _freeVoteUnit); //remaining free vote
 		uint cv = volumes[_truthIndex];
-		uint fraction = 0;
+		uint reward_sum = 0;
 		for(i=0; i<_addresses.length; i++) {
 			a = _addresses[i];
 			uint reward = 0;
 			if(_voters[a].index == _truthIndex) {
 				reward = fv * _voters[a].volume / cv;
-				fraction += (fv * _voters[a].volume) % cv;
+				reward_sum += reward;
 			}
 			_refundList.push(reward);
 		}
 
-		_refundFraction = fraction;
+		_refundFraction = fv - reward_sum;
 		_cashier.multiTransferCoin(_addresses, _refundList);
 		_cashier.transferCoin(getOwner(), _refundFraction);
+
 		_closed = true;
 
 		emit Closed(this.truth());

@@ -28,6 +28,11 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 			return permilMul(total_bettings, _cashierFee);
 	}
 
+	function gameClass() public pure returns(string) {
+		return "undefined game";
+	}
+
+
 	/*
 	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.
 	if odds is -1, it means the game result is confiscated.

@@ -19,6 +19,9 @@ contract SimpleNChoice is ExPostRegulation {
     function documentHash() public pure returns (bytes32) {
       return 0x01234567890123456789012345678901;
     }
+	function gameClass() public pure returns(string) {
+		return "ExAnteGame_V4_R4";
+	}
 
     function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers) {
     

@@ -4,6 +4,9 @@ const conv = function(e) { return (e.toNumber)? e.toNumber() : e; };
 exports.formatBetting = function(bl) {
 	return [ bl[0], bl[1].map(conv), bl[2].map(conv) ];
 }
+exports.formatVoting = function(bl) {
+	return [ bl[0], bl[1].map(conv) ];
+}
 
 //ro: [ [odds0, odds1, ... ], cashier_fee ]
 exports.formatRefundOdds = function(ro) {
