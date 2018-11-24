@@ -7,11 +7,12 @@ import "./GameBase_V#VOTE_SIZE_R#RESULT_SIZE.sol";
 contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE  {
 	struct Entry {
 		VOTE_TYPE content;
-		uint volume; 
+		uint volume;
+		uint count; // used by only _bettings
 	}
 	mapping (address => Entry[]) internal _entries;
 	uint private _betCount;
-	Entry[] internal _bettings;
+	Entry[] internal _bettings; // array for each content
 
 
 	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
@@ -28,10 +29,12 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		Entry[] storage e = _entries[from];
 		bool new_entry = e.length==0;
 		if(new_entry) _addresses.push(from);
-		e.push(Entry(content, volume));
+		e.push(Entry(content, volume, 1));
 
 		uint32 index = findOrCreate(content);
-		_bettings[index].volume += volume;
+		Entry storage t = _bettings[index];
+		t.volume += volume;
+		t.count++;
 		_betCount++;
 		_totalBettings += volume;
 
@@ -57,7 +60,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			Entry storage e = _bettings[i];
 			candidates[i] = e.content;
 			volumes[i] = e.volume;
-			counts[i] += 1;
+			counts[i] = e.count;
 		}
 		return (candidates, counts, volumes);
 	}
@@ -70,7 +73,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			Entry storage e = _bettings[i];
 			candidates[i] = bytes8(e.content);
 			volumes[i] = e.volume;
-			counts[i] += 1;
+			counts[i] = e.count;
 		}
 		return (candidates, counts, volumes);
 	}
@@ -80,7 +83,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			if(content == _bettings[i].content)
 				return uint32(i);
 		}
-		_bettings.push(Entry(content, 0));
+		_bettings.push(Entry(content, 0, 0));
 		return uint32(_bettings.length-1);
 	}
 	function findEntryIndex(VOTE_TYPE content) internal view returns(uint32) {
