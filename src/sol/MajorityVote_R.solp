@@ -12,9 +12,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	address[] private _addresses;
 
 	uint private _votingFee;
+	uint private _voteUpperLimit; // limit of amount 1 voting action , 0:unlimited
 	uint private _totalVote;
 	uint private _freeVoteUnit; // unit amount of coins for free votings
 	uint private _freeVoteRemainCount; // remaining count of free votings
+	address[] private _freeVoteAddresses;
 	RESULT_TYPE[] private _candidates;
 
 	//filled at the time of voting lock
@@ -33,10 +35,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	event MajorityReversal(address indexed voter, RESULT_TYPE content, uint volume);
 	event NoMajority();
 
-	constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
+	constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time, uint vote_volume_upper_limit) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
 		_truthIndex = UNDECIDED;
 		_timeExtensionOnReversal = 60 minutes;
 		_version = "MajorityVote.0";
+		_voteUpperLimit = vote_volume_upper_limit;
 		_checkMajorityOnClose = true;
 	}
 #if DEBUG
@@ -70,6 +73,12 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	function lockTimeExtensionCount() public view returns(uint) {
 		return _lockTimeExtensionCount;
 	}
+	function voteUpperLimit() public view returns(uint) {
+		return _voteUpperLimit;
+	}
+	function setVoteUpperLimit(uint v) public onlyOwner {
+		_voteUpperLimit = v;
+	}
 	function betBody(address from, RESULT_TYPE content, uint coin) internal {
 		vote(from, content, coin);
 	}
@@ -79,9 +88,10 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 			ERROR_CASE("voting is not acceptable")
 		if(_closed)
 			ERROR_CASE("voting is already closed")
-		
 		if(_totalVote + volume < _totalVote)
 			ERROR_CASE("overflow")
+		if(_voteUpperLimit > 0 && _voteUpperLimit < volume)
+			ERROR_CASE("volume upper limit")
 
 		uint32 index = findOrCreate(content);
 		if(_totalVote!=0) {
@@ -99,7 +109,6 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 				_lockTime += _timeExtensionOnReversal;
 				_lockTimeExtensionCount++;
 			}
-
 		}
 
 		_totalVote += volume;
@@ -108,7 +117,7 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		// in case of multiple votes, the last vote content is valid. volume is total votes.
 		ch.index = index;
 		ch.volume = ch.volume + volume;
-			
+
 		if(new_voter)
 			_addresses.push(from); 
 		emit Voted(from, content, volume);
@@ -177,13 +186,21 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	function getFreeVotings() public view returns(uint, uint) {
 		return (_freeVoteUnit, _freeVoteRemainCount);
 	}
+	function containsFreeVoteAddress(address a) public view returns(bool) {
+		for(uint i=0; i<_freeVoteAddresses.length; i++)
+			if(_freeVoteAddresses[i] == a) return true;
+		return false;
+	}
 	function freeVote(RESULT_TYPE content) public {
 		if(_freeVoteRemainCount==0 || _freeVoteUnit==0) revert();
+		if(containsFreeVoteAddress(msg.sender)) 
+			ERROR_CASE("duplicated free voting")
 		_freeVoteRemainCount--;
 		if(!voteAcceptable()) //voting owner can vote any time to protect from malicious voting
 			ERROR_CASE("voting is not acceptable")
 		
 		vote(msg.sender, content, _freeVoteUnit);
+		_freeVoteAddresses.push(msg.sender);
 	}
 
 	//Close Voting

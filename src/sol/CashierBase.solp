@@ -12,10 +12,8 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	uint internal _issuedVolume;
 	uint internal _poolVolume;
 	address[] internal _addresses;
-	address[] internal _borrowers;
 
-	mapping (address => Account) internal _balances;
-	mapping (address => Account) internal _loans;
+	mapping (address => uint) internal _balances;
 	bool internal _open;
 	bool internal _allowAdditionalIssue;
 	bool internal _verifyBettingTargetContent;
@@ -27,10 +25,6 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	event Deposit(address indexed account, uint amount);
 	event Withdraw(address indexed account, uint amount);
 	event TransferCoin(address indexed from, address indexed to, uint amount);
-
-	struct Account {
-		uint coin;
-	}
 
 	function getName() public view returns(string) {
 		return _name;
@@ -60,7 +54,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		return _poolVolume;
 	}
 	function balanceOf(address a) public view returns(uint) {
-		return _balances[a].coin;
+		return _balances[a];
 	}
 
 	function addIssue(uint value) public onlyOwner {
@@ -76,29 +70,30 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		uint[] memory vol = new uint[](_addresses.length);
 		for(uint i=0; i<_addresses.length; i++) {
 			ad[i] = _addresses[i];
-			vol[i] = _balances[ad[i]].coin;
+			vol[i] = _balances[ad[i]];
 		}
 		return (ad, vol);
 	}
 	function deposit() payable public { //NOT external, since bet() calls deposit
-		if(isContract(msg.sender)) 
+		depositInternal(msg.sender, msg.value);
+	}
+	function depositInternal(address to, uint amount) internal {
+		if(isContract(to)) 
 			ERROR_CASE("any contracts cannot deposit")
 
-		uint amount = msg.value;
-		uint coin = amount;
 		// amount / coin rate may be change
 		if(!_open)
 			ERROR_CASE("cashier is not open")
 		if(_poolVolume < coin)
 			ERROR_CASE("pool is insufficient")
 
-		Account storage acc = _balances[msg.sender];
-		if(acc.coin==0) _addresses.push(msg.sender);
+		uint coin = _balances[to];
+		if(coin==0) _addresses.push(to);
 
-		acc.coin += coin;
+		coin += amount;
 		_poolVolume -= coin;
-		_balances[msg.sender] = acc;
-		emit Deposit(msg.sender, coin);
+		_balances[to] = coin;
+		emit Deposit(to, coin);
 	}
 	function withdraw(uint coin) public {
 		withdraw(msg.sender, coin);
@@ -106,18 +101,18 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	function withdraw(address to, uint coin) internal {
 		if(!_open)
 			ERROR_CASE("cashier is not open")
-		Account storage acc = _balances[to];
-		if(acc.coin < coin)
+		uint current = _balances[to];
+		if(current < coin)
 			ERROR_CASE("coin is insufficient")
 
 		uint amount = coin;
-		acc.coin -= coin;
+		current -= coin;
 		_poolVolume += coin;
-		if(acc.coin==0) {
+		if(current==0) {
 			delete _balances[to];
 		}
 		else
-			_balances[to] = acc;
+			_balances[to] = current;
 
 		// if this transfer fails, an exception is thrown.
 		// you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
@@ -185,20 +180,22 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 		_poolVolume += coin;
 	}
 */
-	function transferCoin(address from, address to, uint coin) internal {
-		if(coin==0)
+	function transferCoin(address from, address to, uint amount) internal {
+		if(amount==0)
 			return;
 		if(!_open)
 			ERROR_CASE("cashier is not open")
 
-		Account storage src = _balances[from];
-		if(src.coin < coin)
+		uint src = _balances[from];
+		if(src < amount)
 			ERROR_CASE("coin is insufficient")
-		Account storage dst = _balances[to];
-		if(dst.coin==0) _addresses.push(to);
-		src.coin -= coin;
-		dst.coin += coin;
-		emit TransferCoin(from, to, coin);
+		uint dst = _balances[to];
+		if(dst==0) _addresses.push(to);
+		src -= amount;
+		dst += amount;
+		_balances[to] = dst;
+		_balances[from] = src;
+		emit TransferCoin(from, to, amount);
 	}
 
 	function checkMultiTransferCoin(address[] to, uint[] coin) internal {

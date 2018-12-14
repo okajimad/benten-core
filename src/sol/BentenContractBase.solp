@@ -69,7 +69,8 @@ enum FeeType {
 #if DEBUG
     uint internal _now;
     function setNow(uint t) public {
-      _now =t;
+      if(_now < t) // avoid returning to old days
+        _now = t;
     }
     function getNow() public view returns(uint) {
       return _now;

@@ -11,7 +11,7 @@ contract VoteContractPool {
 	function reserve4(uint count) public {
 		address a0 = address(0);
 		for(uint i=0; i<count; i++) {
-			MajorityVote_R4 v = new MajorityVote_R4(a0, a0, a0, 0, 0);
+			MajorityVote_R4 v = new MajorityVote_R4(a0, a0, a0, 0, 0, 0);
 			_MajorityVote4.push(v);
 		}
 	}

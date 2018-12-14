@@ -43,8 +43,8 @@ contract ETHCashier is CashierBase  {
 	//  only coin owner can call BettingTarget through this CoinCashier
 	function bet8(address target, bytes8 content) payable public {
 		require(!_verifyBettingTargetContent || verifyTarget(target));
-		deposit();
 		uint coin = msg.value;
+		deposit();
 		BettingTarget_V8 b = BettingTarget_V8(target);
 		transferCoin(msg.sender, target, coin); //private method: modify internal storage, only msg.sender pay coin to other
 		// BettingTarget.bet() accepts only if the caller is CoinCashier
@@ -54,8 +54,8 @@ contract ETHCashier is CashierBase  {
 	//bytes4 version
 	function bet4(address target, bytes4 content) payable public {
 		require(!_verifyBettingTargetContent || verifyTarget(target));
-		deposit();
 		uint coin = msg.value;
+		deposit();
 		BettingTarget_V4 b = BettingTarget_V4(target);
 		transferCoin(msg.sender, target, coin);
 		// BettingTarget.bet() accepts only if the caller is CoinCashier
@@ -65,19 +65,23 @@ contract ETHCashier is CashierBase  {
 	//Game Owner Supply
 	function ownerSupply(address target) payable public {
 		require(!_verifyBettingTargetContent || verifyTarget(target));
-		deposit();
-		uint coin = msg.value;
-		BettingTarget_V8 b = BettingTarget_V8(target);
+		uint amount = msg.value;
+		address p = msg.sender;
+		depositInternal(p, amount);
+
+		BettingTarget_V4 b = BettingTarget_V4(target);
 		if(b.getOwner() != msg.sender) 
 			ERROR_CASE("Only game/voting owner can call ownerSupply")
-		transferCoin(msg.sender, target, coin);
+		transferCoin(msg.sender, target, amount);
 		// BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
-		b.ownerSupply(coin);
+		b.ownerSupply(amount);
 	}
+	
 
-	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time) public payable {
+	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time, uint vote_volume_upper_limit) public payable {
 		IGame game = IGame(game_);
-		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time);
+		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time, vote_volume_upper_limit);
+		if(address(vote)==address(0)) revert();
 		game.setResultSource(vote);
 		ownerSupply(vote);
 	}

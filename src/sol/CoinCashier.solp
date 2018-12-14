@@ -63,9 +63,9 @@ contract CoinCashier is CashierBase  {
 		b.ownerSupply(coin);
 	}
 
-	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time, uint owner_supply) public {
+	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time, uint owner_supply, uint vote_volume_upper_limit) public {
 		IGame game = IGame(game_);
-		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time);
+		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time, vote_volume_upper_limit);
 		game.setResultSource(vote);
 		ownerSupply(vote, owner_supply);
 	}
