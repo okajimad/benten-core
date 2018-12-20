@@ -44,8 +44,9 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 	function getDelegatedAddress() public view returns(address) {
 		return _delegatedAddress;
 	}
-	function setDelegatedAddress(address a) public onlyOwner {
-		_delegatedAddress = a;
+	function setDelegatedOwner(address dg, address newOwner) public onlyOwner {
+		if(dg!=address(0)) _delegatedAddress = dg;
+		if(newOwner!=address(0)) _owner = newOwner;
 	}
 	function additionalIssueAllowed() public view returns(bool) {
 		return _allowAdditionalIssue;

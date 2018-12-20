@@ -65,8 +65,16 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		return _cancelled;
 	}
 	function betAcceptable() public view returns(bool) {
-		return _openTime <= getNow() && getNow() <= _lockTime;
+		return _openTime <= getNow() && getNow() <= _lockTime && !_cancelled && !_closed;
 	}
+	function isBeforeOpen() public view returns(bool) {
+		return _openTime > getNow();
+	}
+	function isAfterLock() public view returns(bool) {
+		return _lockTime < getNow();
+	}
+
+
 	function ownerSupplyBody(uint coin) internal {
 		_ownerSupply += coin;
 	}

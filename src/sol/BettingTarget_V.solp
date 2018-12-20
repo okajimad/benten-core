@@ -22,8 +22,6 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 		if(msg.sender != address(_cashier)) 
 			ERROR_CASE("betting source is not ICoinCashier")
 
-		if(content[0]==0xFF) revert(); //for revert test
-
 		betBody(sender, content, coin);
 	}
 

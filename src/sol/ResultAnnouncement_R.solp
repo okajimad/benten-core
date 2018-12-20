@@ -29,7 +29,7 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	}
 
 	function voteAcceptable() public view returns(bool) {
-		return _openTime <= getNow() && getNow() < _lockTime;
+		return _openTime <= getNow() && getNow() < _lockTime && !_closed;
 	}
 	function openTime() public view returns(uint) {
 		return _openTime;
@@ -40,8 +40,11 @@ contract ResultAnnouncement_R ##RESULT_SIZE	is BettingTarget_V ##RESULT_SIZE {
 	function isClosed() public view returns(bool) {
 		return _closed;
 	}
-	function beforeOpen() public view returns(bool) {
+	function isBeforeOpen() public view returns(bool) {
 		return _openTime > getNow();
+	}
+	function isAfterLock() public view returns(bool) {
+		return _lockTime < getNow();
 	}
 	function truth() public view returns(RESULT_TYPE);
 

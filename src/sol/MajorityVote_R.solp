@@ -91,15 +91,15 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		if(_totalVote + volume < _totalVote)
 			ERROR_CASE("overflow")
 		if(_voteUpperLimit > 0 && _voteUpperLimit < volume)
-			ERROR_CASE("volume upper limit")
+			ERROR_CASE("volume exceeds upper limit")
 
 		uint32 index = findOrCreate(content);
 		if(_totalVote!=0) {
 			uint32 major_index = currentMajorIndex();
 			uint major_total = currentVotingOf(major_index);
 			// if all votings are unlimited, voting fee cannot pay even gas of voting.
-			// to reserve voters profit, additional votes for 99% majority is rejected.
-			if(index==major_index && majorityRatioPermil() >= 990)
+			// to reserve voters profit, additional votes for 90% majority is rejected.
+			if(index==major_index && majorityRatioPermil() >= 900)
 				ERROR_CASE("Existing Voter Profit Protect")
 
 			// in case of reversals ( it may be malicious! ), the lock time is extended automatically.
@@ -134,12 +134,12 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	}
 	function currentVotingOf(uint32 index) private view returns(uint) {
 		uint[] memory volumes;
-		(, volumes) = currentVotingList();
+		(, volumes, ) = currentVotingList();
 		return volumes[index];
 	}
 	function currentMajorIndex() private view returns(uint32) {
 		uint[] memory volumes;
-		(, volumes) = currentVotingList();
+		(, volumes, ) = currentVotingList();
 		uint32 major_index = 0;
 		uint major_volume = 0;
 		for(uint i=0; i<volumes.length; i++) {
@@ -159,15 +159,14 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		return major_total * 1000 / (_totalVote + _votingFee + ( _freeVoteUnit * _freeVoteRemainCount ) );
 	}
 
-	function currentVotingList() public view returns(RESULT_TYPE[], uint[] ) {
-		uint[] memory volumes = new uint[](_candidates.length + 1);
+	function currentVotingList() public view returns(RESULT_TYPE[], uint[], uint ) {
+		uint[] memory volumes = new uint[](_candidates.length);
 		for(uint i=0; i<_addresses.length; i++) {
 			address a = _addresses[i];
 			Vote storage v = _voters[a];
 			volumes[v.index] += v.volume;
 		}
-		volumes[ _candidates.length ] = _votingFee + ( _freeVoteUnit * _freeVoteRemainCount );
-		return (_candidates, volumes);
+		return (_candidates, volumes, _votingFee + ( _freeVoteUnit * _freeVoteRemainCount ));
 	}
 	// bytes[] is not allowed by solidity compiler. then use fixed size instead.
 	function candidateList() public view returns(RESULT_TYPE[] memory) {
