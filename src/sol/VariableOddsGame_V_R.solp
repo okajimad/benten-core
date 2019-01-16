@@ -181,16 +181,16 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		CashierBase cashier = CashierBase(_cashier);
 
 		for(i=0; i<_addresses.length; i++) {
-			a= _addresses[i];
+			a = _addresses[i];
 			Entry[] storage e = _entries[a];
-			for(uint j=0; j<e.length; j++) {
+			uint refund = 0;
+			for(uint j = 0; j<e.length; j++) {
 				Entry storage m = e[j];
-				if(m.volume!=0) {
-					uint refund = calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
-					if(refund > 0)
-						_cashier.transferCoin(a, refund);
-				}
+				if(m.volume!=0) 
+					refund += calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
 			}
+			_refunds.push(refund);
+			_refundRemains.push(refund);
 		}
 
 		//remaining coin go to the owner of this game

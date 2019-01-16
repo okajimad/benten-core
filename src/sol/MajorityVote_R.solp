@@ -22,7 +22,8 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 	//filled at the time of voting lock
 	uint32 private _truthIndex;
 	uint32 constant UNDECIDED = 0xFFFFFFFF;
-	uint[] private _refundList;
+	uint[] private _refunds;
+	uint[] private _refundRemains;
 	uint private _finalVoteVolume;
 	uint private _refundFraction;
 
@@ -247,11 +248,11 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 				reward = fv * _voters[a].volume / cv;
 				reward_sum += reward;
 			}
-			_refundList.push(reward);
+			_refunds.push(reward);
+			_refundRemains.push(reward);
 		}
 
 		_refundFraction = fv - reward_sum;
-		_cashier.multiTransferCoin(_addresses, _refundList);
 		_cashier.transferCoin(getOwner(), _refundFraction);
 
 		_closed = true;
@@ -259,12 +260,26 @@ contract MajorityVote_R ##RESULT_SIZE	is ResultAnnouncement_R ##RESULT_SIZE {
 		emit Closed(this.truth());
 	}
 
+	//partial refunding operation
+	function refundPartial(uint start, uint end) public {
+		for(uint i = start; i < end; i++) {
+			uint v = _refundRemains[i];
+			if(v > 0) {
+				_cashier.transferCoin(_addresses[i], v);
+				_refundRemains[i] = 0;
+			}
+		}
+	}
+	function refundRemains() public view returns(address[], uint[]) {
+		return (_addresses, _refundRemains);
+	}
+
 	function voterCount() public view returns(uint) {
 		return _addresses.length;
 	}
 	function refundTuple() public view returns(address[] a, uint[] v, uint f) {
 		if(_truthIndex==UNDECIDED) revert();
-		return (_addresses, _refundList, _refundFraction);
+		return (_addresses, _refunds, _refundFraction);
 	}
 	function truth() public view returns(RESULT_TYPE) {
 		if(_truthIndex==UNDECIDED)

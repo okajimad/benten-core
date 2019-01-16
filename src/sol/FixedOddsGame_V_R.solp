@@ -155,10 +155,9 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			else
 				refund_per_addr += permilMul(ee.volume, uint(odds));
 		}
-		if(refund_per_addr>0)
-			_cashier.transferCoin(a, refund_per_addr);
 		_totalRefunds += refund_per_addr;
 		_refunds.push(refund_per_addr);
+		_refundRemains.push(refund_per_addr);
 	}
 
 	function cancelGame() public onlyOwner {

@@ -16,7 +16,7 @@ contract('MajorityVote', function(accounts) {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
 	var reg = await Regulation.new(1900,0,0, {from:a0});
 	var now = (await cashier.getNow()).toNumber();
-    var voting = await MajorityVote.new(cashier.address, reg.address, a0, now, now + 600, {from:a0});
+    var voting = await MajorityVote.new(cashier.address, reg.address, a0, now, now + 600, 0, {from:a0});
     await voting.setCheckMajorityOnClose(false, {from:a0} );
     var vote_handler = truffle_event.extractor(MajorityVote.abi, "Voted");
     var closed_handler = truffle_event.extractor(MajorityVote.abi, "Closed");
@@ -56,6 +56,7 @@ contract('MajorityVote', function(accounts) {
     await voting.freeVote(c1, {from:a2});
     assert.equal((await voting.getFreeVotings())[1], 1);
     // totalsupply:500( supply:0, freeVoteRemain:100, a0:100, a1:200, a2:100),  winner:a1 and a2
+    assert.equal(3, (await voting.voterCount()));
 
     await voting.setNow(now + 6000); //locktime is extended
     console.log("D1");
@@ -89,7 +90,7 @@ contract('MajorityVote', function(accounts) {
     var cashier = await Cashier.new("test", 10000, false, {from:a0});
 	var reg = await Regulation.new(1900,0,0, {from:a0});
 	var now = (await cashier.getNow()).toNumber();
-    var voting = await MajorityVote.new(cashier.address, reg.address, a0, now, now+600, {from:a0}); //cashier address is not ICoinCashier
+    var voting = await MajorityVote.new(cashier.address, reg.address, a0, now, now+600, 0, {from:a0}); //cashier address is not ICoinCashier
     await cashier.ownerSupply(voting.address, 100, {from:a0});
     await cashier.bet4(voting.address, c0, 9800, {from:a0});
     assert.equal(await voting.getLastError(), ""); //less than 99%

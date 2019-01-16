@@ -42,7 +42,6 @@ contract ETHCashier is CashierBase  {
 
 	//  only coin owner can call BettingTarget through this CoinCashier
 	function bet8(address target, bytes8 content) payable public {
-		require(!_verifyBettingTargetContent || verifyTarget(target));
 		uint coin = msg.value;
 		deposit();
 		BettingTarget_V8 b = BettingTarget_V8(target);
@@ -53,7 +52,6 @@ contract ETHCashier is CashierBase  {
 
 	//bytes4 version
 	function bet4(address target, bytes4 content) payable public {
-		require(!_verifyBettingTargetContent || verifyTarget(target));
 		uint coin = msg.value;
 		deposit();
 		BettingTarget_V4 b = BettingTarget_V4(target);
@@ -64,7 +62,6 @@ contract ETHCashier is CashierBase  {
 
 	//Game Owner Supply
 	function ownerSupply(address target) payable public {
-		require(!_verifyBettingTargetContent || verifyTarget(target));
 		uint amount = msg.value;
 		address p = msg.sender;
 		depositInternal(p, amount);
@@ -76,8 +73,7 @@ contract ETHCashier is CashierBase  {
 		// BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
 		b.ownerSupply(amount);
 	}
-	
-
+	/*
 	function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time, uint vote_volume_upper_limit) public payable {
 		IGame game = IGame(game_);
 		MajorityVote_R4 vote = new MajorityVote_R4(address(this), game.regulation(), msg.sender, vote_open_time, vote_lock_time, vote_volume_upper_limit);
@@ -85,5 +81,6 @@ contract ETHCashier is CashierBase  {
 		game.setResultSource(vote);
 		ownerSupply(vote);
 	}
+	*/
 
 }

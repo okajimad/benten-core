@@ -36,4 +36,5 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 	//close voting or betting ( abstract function )
 	function close() public;
 
+	function refundPartial(uint start, uint end) public;
 }

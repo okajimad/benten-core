@@ -70,7 +70,7 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		
 		int[] memory odds = new int[](contents.length);
 		for(uint i=0; i<odds.length; i++) 
-			if(contents[i] == truth) odds[i] = int(total_refund * 1000 / volumes[i]);
+			if(contents[i] == truth) odds[i] = volumes[i]==0? 0 : int(total_refund * 1000 / volumes[i]);
 
 		return (odds, int(total_refund), int(cashier_fee), int(total_bet) - int(total_refund) - int(cashier_fee));
 	}
