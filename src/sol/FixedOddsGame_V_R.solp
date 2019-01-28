@@ -8,14 +8,14 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 	struct Entry {
 		VOTE_TYPE content;
 		uint volume;
-		uint count; // used by only _bettings
+		uint count; // for Entry[] of _bettings -> betting count
 	}
 	mapping (address => Entry[]) internal _entries;
 	uint private _betCount;
 	Entry[] internal _bettings; // array for each content
 
 
-	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, uint bet_total_limit, uint bet_one_time_limit, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE(title, cashier, voting, regulation, owner, open_time, close_time, bet_total_limit, bet_one_time_limit, allow_cancel) {
 	}
 
 	function betBody(address from, VOTE_TYPE content, uint coin) internal {
@@ -139,25 +139,27 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			_cashier.transferCoin(cashier.getOwner(), _cashierFee);
 		_closed = true;
 
-		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
+		emit Closed(truth, _refundAddresses.length, _totalBettings, _totalRefunds);
 	}
 	
 	function closePerUser(address a, int[] refund_odds) private {
 		Entry[] storage e = _entries[a];
-		uint refund_per_addr = 0;
 		for(uint j=0; j<e.length; j++) {
 			Entry storage ee = e[j];
 			uint32 index = findOrCreate(ee.content);
 			int odds = refund_odds[index];
+			uint refund_per_bet = 0;
 
 			if(odds == -1)
-				refund_per_addr += ee.volume; // confiscated game
+				refund_per_bet += ee.volume; // confiscated game
 			else
-				refund_per_addr += permilMul(ee.volume, uint(odds));
+				refund_per_bet += permilMul(ee.volume, uint(odds));
+
+			_totalRefunds += refund_per_bet;
+			_refundAddresses.push(a); // _refundAddresses may contain same address if the address bets multiple times
+			_refunds.push(refund_per_bet);
+			_refundRemains.push(refund_per_bet);
 		}
-		_totalRefunds += refund_per_addr;
-		_refunds.push(refund_per_addr);
-		_refundRemains.push(refund_per_addr);
 	}
 
 	function cancelGame() public onlyOwner {
@@ -179,6 +181,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 			if(refund>0)
 				_cashier.transferCoin(a, refund);
 			_refunds.push(refund);
+			_refundAddresses.push(a);
 			_totalRefunds += refund;
 		}
 		
@@ -187,7 +190,7 @@ contract FixedOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_SIZE
 		_cancelled = true;
 		_closed = true;
 
-		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
+		emit Cancelled(_refundAddresses.length, _totalBettings, _totalRefunds);
 	}
 
 

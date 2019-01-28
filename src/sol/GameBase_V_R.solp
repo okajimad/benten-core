@@ -20,20 +20,20 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	// cancel option
 	bool internal _allowCancel;
 	bool internal _cancelled;     //flag of cancelling game by owner
-	uint internal _totalBettings; //current total betting volume
 
 	//results: these are set in close() function
 	uint internal _totalRefunds;
 	uint internal _cashierFee;
 	uint internal _ownerRefund;
-	uint[] internal _refunds; //corresponding to _addresses
+	address[] internal _refundAddresses;
+	uint[] internal _refunds; //corresponding to _refundAddresses
 	uint[] internal _refundRemains;
 
 	event Entried(address indexed user, VOTE_TYPE content, uint volume);
 	event Closed(RESULT_TYPE truth, uint userCount, uint totalBetting, uint totalRefund);
 	event Cancelled(uint userCount, uint totalBetting, uint totalRefund);
 
-	constructor(string title, address cashier, address result_src, address regulation, address owner, uint open_time, uint lock_time, bool allow_cancel) public {
+	constructor(string title, address cashier, address result_src, address regulation, address owner, uint open_time, uint lock_time, uint bet_total_limit, uint bet_one_time_limit, bool allow_cancel) public {
 		_title = title;
 		_owner = owner;
 		_cashier = CoinCashier(cashier);
@@ -41,6 +41,8 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		_regulation = IRegulation(regulation);
 		_openTime = open_time;
 		_lockTime = lock_time;
+		_totalBettingsLimit = bet_total_limit;
+		_oneTimeBettingsLimit = bet_one_time_limit;
 		_allowCancel = allow_cancel;
 	}
 
@@ -85,11 +87,11 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	function resultSource() public view returns(address) {
 		return _resultSource;
 	}
-	function setResultSource(address source) public  {
+	function setResultSource(address source) public onlyOwnerOrCashier {
 		if(_resultSource != address(0)) revert(); //one time registration is allowed
 		_resultSource = ResultAnnouncement_R ##RESULT_SIZE (source);
 	}
-	function getOwnerSupply() public view onlyOwner returns(uint) {
+	function getOwnerSupply() public view returns(uint) {
 		return _ownerSupply;
 	}
 
@@ -102,7 +104,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 	}
 	function refundTuple() public view returns(address[] a, uint[] v, uint cf, uint ow) {
 		require(_closed);
-		return (_addresses, _refunds, _cashierFee, _ownerRefund);
+		return (_refundAddresses, _refunds, _cashierFee, _ownerRefund);
 	}
 
 	//Description of each candidate can be embedded in contract storage

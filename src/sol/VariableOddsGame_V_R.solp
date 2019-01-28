@@ -17,7 +17,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 	uint private _betCount;
 	CurrentOdds[] private _currentOdds;
 
-	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, owner, open_time, close_time, allow_cancel) {
+	constructor(string title, address cashier, address voting, address regulation, address owner, uint open_time, uint close_time, uint bet_total_limit, uint bet_one_time_limit, bool allow_cancel) public GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE (title, cashier, voting, regulation, owner, open_time, close_time, bet_total_limit, bet_one_time_limit, allow_cancel) {
 		_version = "VariableOddsGame.1";
 	}
 
@@ -188,9 +188,10 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 				Entry storage m = e[j];
 				if(m.volume!=0) 
 					refund += calculateRefundWithOdds(m.content, truth, m.odds, m.volume);
+				_refundAddresses.push(a);
+				_refunds.push(refund);
+				_refundRemains.push(refund);
 			}
-			_refunds.push(refund);
-			_refundRemains.push(refund);
 		}
 
 		//remaining coin go to the owner of this game
@@ -208,7 +209,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		_cashier.transferCoin(cashier.getOwner(), _cashierFee);
 		_closed = true;
 		
-		emit Closed(truth, _addresses.length, _totalBettings, _totalRefunds);
+		emit Closed(truth, _refundAddresses.length, _totalBettings, _totalRefunds);
 	}
 
 
@@ -230,6 +231,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 			}
 			if(refund>0)
 				_cashier.transferCoin(a, refund);
+			_refundAddresses.push(a);
 			_refunds.push(refund);
 			_totalRefunds += refund;
 		}
@@ -239,7 +241,7 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE	 is GameBase_V ##VOTE_S
 		_cancelled = true;
 		_closed = true;
 
-		emit Cancelled(_addresses.length, _totalBettings, _totalRefunds);
+		emit Cancelled(_refundAddresses.length, _totalBettings, _totalRefunds);
 	}
 
 	function calculateRefundWithOdds(VOTE_TYPE content, VOTE_TYPE truth, uint odds, uint volume) public pure returns(uint) {
