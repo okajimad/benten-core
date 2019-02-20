@@ -20,8 +20,8 @@ contract BettingTarget_V ##VOTE_SIZE	is BentenContractBase {
 	uint internal _totalBettingsLimit; // total and per action limit of betting.  0 means no limit
 	uint internal _oneTimeBettingsLimit;
 
-	function getBettingsLimit() public view returns(uint, uint) {
-		return (_totalBettingsLimit, _oneTimeBettingsLimit);
+	function getBettingsLimit() public view returns(uint, uint, uint) {
+		return (_oneTimeBettingsLimit, _totalBettingsLimit, _totalBettingsLimit==0? 0 : _totalBettingsLimit - _totalBettings);
 	}
 	function setBettingsLimit(uint total_limit, uint one_time_limit) public onlyOwner {
 		if(_totalBettings!=0) 
