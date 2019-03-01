@@ -151,13 +151,13 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE	 is BettingTarget_V ##VOTE_SIZE
 		for(uint i = start; i < end; i++) {
 			uint v = _refundRemains[i];
 			if(v > 0) {
-				_cashier.transferCoin(_addresses[i], v);
+				_cashier.transferCoin(_refundAddresses[i], v);
 				_refundRemains[i] = 0;
 			}
 		}
 	}
 	function refundRemains() public view returns(address[], uint[]) {
-		return (_addresses, _refundRemains);
+		return (_refundAddresses, _refundRemains);
 	}
 
 	// getDescriptionList() style function is not allowed since 'string[]' cannot be used as return type of function!
