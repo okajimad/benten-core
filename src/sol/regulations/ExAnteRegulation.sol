@@ -1,10 +1,9 @@
 
 pragma solidity ^0.4.0;
 import "./FixedOddsRegulation.sol";
-import "./IGame.sol";
-import "./VoteContractPool.sol";
-import "./MajorityVote_R4.sol";
-import "./ExAnteGame_V4_R4.sol";
+import "../IGame.sol";
+import "../MajorityVote_R4.sol";
+import "../games/ExAnteGame_V4_R4.sol";
 
 contract ExAnteRegulation is FixedOddsRegulation {
 

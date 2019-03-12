@@ -1,12 +1,11 @@
 
 pragma solidity ^0.4.0;
-import "./IGame.sol";
-import "./VariableOddsGame_V4_R4.sol";
-import "./MajorityVote_R4.sol";
-import "./ExPostGame_V4_R4.sol";
-import "./VoteContractPool.sol";
-import "./BentenContractBase.sol";
-import "./IRegulation.sol";
+import "../IGame.sol";
+import "../games/VariableOddsGame_V4_R4.sol";
+import "../MajorityVote_R4.sol";
+import "../games/ExPostGame_V4_R4.sol";
+import "../BentenContractBase.sol";
+import "../IRegulation.sol";
 
 contract VariableOddsRegulation is BentenContractBase, IRegulation {
 

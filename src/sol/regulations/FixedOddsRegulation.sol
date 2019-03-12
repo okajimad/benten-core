@@ -1,8 +1,8 @@
 
 pragma solidity ^0.4.0;
-import "./BentenContractBase.sol";
-import "./IRegulation.sol";
-import "./IGame.sol";
+import "../BentenContractBase.sol";
+import "../IRegulation.sol";
+import "../IGame.sol";
 
 contract FixedOddsRegulation is BentenContractBase, IRegulation {
 

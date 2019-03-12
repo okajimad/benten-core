@@ -1,9 +1,8 @@
 pragma solidity ^0.4.19;
-import "../ExPostGame_V4_R4.sol";
+import "../games/ExPostGame_V4_R4.sol";
 import "../MajorityVote_R4.sol";
 import "../ETHCashier.sol";
-import "../ExPostRegulation.sol";
-import "../VoteContractPool.sol";
+import "./ExPostRegulation.sol";
 
 contract GenericSport_WinLose is ExPostRegulation {
 

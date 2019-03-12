@@ -1,9 +1,8 @@
 pragma solidity ^0.4.19;
-import "../ExAnteGame_V4_R4.sol";
+import "../games/ExAnteGame_V4_R4.sol";
 import "../MajorityVote_R4.sol";
 import "../ETHCashier.sol";
-import "../ExAnteRegulation.sol";
-import "../VoteContractPool.sol";
+import "./ExAnteRegulation.sol";
 
 contract ChohanRegulation is ExAnteRegulation {
 

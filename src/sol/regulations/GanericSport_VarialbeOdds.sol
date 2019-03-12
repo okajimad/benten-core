@@ -1,5 +1,5 @@
 pragma solidity ^0.4.19;
-import "../VariableOddsRegulation.sol";
+import "./VariableOddsRegulation.sol";
 
 contract GenericSport_VariableOdds is VariableOddsRegulation {
 

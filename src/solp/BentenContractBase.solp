@@ -1,13 +1,17 @@
 pragma solidity ^0.4.0;
 /*
   Base class for Benten contract family
-  
+
+  Warning: This .solp file is converted solidity source code by the benten preprocessor
+  You should 'npm run preprocess' to get solidity file
 */
 contract BentenContractBase  {
-enum FeeType {
-	Value, // fixed value
-	Ratio // fixed ratio (permil)
-}
+    string private OutputFile = #FILE;
+
+    enum FeeType {
+  	  Value, // fixed value
+  	  Ratio // fixed ratio (permil)
+    }
     address internal _owner;
     string internal _version;
 
@@ -19,7 +23,7 @@ enum FeeType {
     }
 
     modifier onlyOwner() {
-        require(msg.sender == _owner);
+        require(msg.sender == _owner, "only owner can call this method");
         _;
     }
 
@@ -54,14 +58,14 @@ enum FeeType {
     string internal _lastError;
 
     function getLastError() public view returns(string) {
-      return _lastError;
+        return _lastError;
     }
     function setLastError(string e) public {
-      _lastError = e;
+        _lastError = e;
     }
 #else
     function getLastError() public pure returns(string) {
-      return "";
+        return "";
     }
 #endif
 
@@ -69,23 +73,23 @@ enum FeeType {
 #if DEBUG
     uint internal _now;
     function setNow(uint t) public {
-      if(_now < t) // avoid returning to old days
-        _now = t;
+        if(_now < t) // avoid returning to old days
+            _now = t;
     }
     function getNow() public view returns(uint) {
-      return _now;
+        return _now;
     }
 #else
     function getNow() public view returns(uint) {
-      return now;
+        return now;
     }
 #endif
 
-	function permilMul(uint a, uint b) public pure returns(uint) {
-		if(a==0 || b==0) return 0;
-		uint c = a * b;
-		assert(c / b == a);
-		return c/1000;
-	}
+    function permilMul(uint a, uint b) public pure returns(uint) {
+        if(a==0 || b==0) return 0;
+        uint c = a * b;
+        assert(c / b == a);
+        return c/1000;
+    }
 
 }
