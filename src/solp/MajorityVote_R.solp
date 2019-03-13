@@ -213,7 +213,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
             ERROR_CASE("current time is before voting close time")
         if(_closed)
             ERROR_CASE("voting is already closed")
-        /* this limitation is deprectated
+        /* this limitation is deprecated
         If actual results are subtle, you may not be able to get 90%
 
         if(_checkMajorityOnClose && majorityRatioPermil() < 900) {

@@ -15,13 +15,13 @@ Restrection in macro with arguments:
 */
 'use strict';
 function is_space(v) {
-  for(var i=0; i<v.length; i++)
-  	  if(v[i]!=" ") return false;
-  return true;
+    for (var i = 0; i < v.length; i++)
+        if (v[i] != " ") return false;
+    return true;
 }
-    function is_newline(s) {
-        return s.indexOf("\n") != -1;
-    }
+function is_newline(s) {
+    return s.indexOf("\n") != -1;
+}
 
 
 function init_token_defs(source, token_defs) {
@@ -71,7 +71,7 @@ function c_style_token_defs() {
         { regex: /}/g, name: 'close curly' },
         { regex: /([~!%^&*\/\=|.,:;\?]|->|<{1,2}|>{1,2}|\*{1,2}|\|{1,2}|&{1,2}|-{1,2}|\+{1,2}|[-+*|&%\/=]=)/g, name: 'operator' },
         { regex: /\\\n?/g, name: 'line continue' },
-        { regex: /##([_A-Za-z]\w*)/g, name:'token concat' }
+        { regex: /##([_A-Za-z]\w*)/g, name: 'token concat' }
     ];
 }
 
@@ -93,27 +93,27 @@ exports.tokenize = function tokenize(source) {
 
 // tokens such as '$0', '$1' are converted into macro parameter
 function apply_macro(m, args) {
-  var result = [];
-  for(var i in m) {
-    var v = m[i];
-    if(v[0]=="$") result.push(args[parseInt(v[1])]);
-    else result.push(v);
-  }
-  return result;
+    var result = [];
+    for (var i in m) {
+        var v = m[i];
+        if (v[0] == "$") result.push(args[parseInt(v[1])]);
+        else result.push(v);
+    }
+    return result;
 }
 
 function remove_last_whitespaces(arr) {
-            //removed prev whitespaces
-            var last = arr[arr.length-1];
-            while(is_space(last)) {
-              arr.pop();
-              last = arr[arr.length-1];
-            }
+    //removed prev whitespaces
+    var last = arr[arr.length - 1];
+    while (is_space(last)) {
+        arr.pop();
+        last = arr[arr.length - 1];
+    }
 }
 
-exports.preprocess = function(source, defines) {
-    if(!defines) defines = {};
-	
+exports.preprocess = function (source, defines) {
+    if (!defines) defines = {};
+
     var if_stack = [];
     function if_stack_enabled() {
         for (var i in if_stack)
@@ -121,150 +121,150 @@ exports.preprocess = function(source, defines) {
         return true;
     }
 
-  var tokens = exports.tokenize(source, c_style_token_defs());
-  
-  function token_at(i) {
-      var t = tokens[i];
-      return source.substring(t.begin, t.end);
-  }
-  //search next 2 tokens without whitespace
-  function next2tok(c, callback) {
-    var first = null;
-    while (true) {
-        var t = tokens[c];
-        if (t.type != "whitespace" && t.type != "area comment" && t.type != "line comment") {
-            if(!first)
-                first = token_at(c);
-            else {
-                callback(first, token_at(c), c);
+    var tokens = exports.tokenize(source, c_style_token_defs());
+
+    function token_at(i) {
+        var t = tokens[i];
+        return source.substring(t.begin, t.end);
+    }
+    //search next 2 tokens without whitespace
+    function next2tok(c, callback) {
+        var first = null;
+        while (true) {
+            var t = tokens[c];
+            if (t.type != "whitespace" && t.type != "area comment" && t.type != "line comment") {
+                if (!first)
+                    first = token_at(c);
+                else {
+                    callback(first, token_at(c), c);
+                    return c + 1;
+                }
+            }
+            c++;
+        }
+    }
+    function next1tok(c, callback) {
+        while (true) {
+            var t = tokens[c];
+            if (t.type != "whitespace" && t.type != "area comment" && t.type != "line comment") {
+                callback(token_at(c), c);
                 return c + 1;
             }
-        }
-        c++;
-    }
-  }
-  function next1tok(c, callback) {
-      while (true) {
-          var t = tokens[c];
-          if (t.type != "whitespace" && t.type != "area comment" && t.type != "line comment") {
-              callback(token_at(c), c);
-              return c + 1;
-          }
-          c++;
-      }
-  }
-  function next_bracket_close(c, callback) {
-  	  var args = [];
-      while (true) {
-          var t = tokens[c];
-          // Ommission Work!  We should use aythentic token analizer...
-          if (t.type == "quote" || t.type=="number" || t.type=="identifier") {
-              args.push(token_at(c));
-          }
-          if(t.type=="close paren") {
-            callback(args);
-            return c;
-          }
-          c++;
-      }
-  }
-  function check_quote(v) {
-    //apply #XXX style macro
-    if(v.indexOf('#')==-1) return v; //easy case
-    
-    for(var k in defines) {
-      var e = defines[k];
-      v = v.replace("#"+k, e);
-    }
-    return v;
-  }
-  var c = 0;
-  var result = [];
-  
-  while(c < tokens.length) {
-      var t = tokens[c];
-      var ty = t.type;
-      var tv = source.substring(t.begin, t.end);
-      if (ty == "directive") {
-          tv = tv.substring(1); //remove '#'
-          if (tv == "define")
-              c = next2tok(c + 1, function (k, v) { defines[k] = v });
-          else if (tv == "undef")
-              c = next1tok(c + 1, function (k) { defines[k] = null });
-          else if (tv == "if") {
-              var neg = false;
-              function if_branch(v) {
-                  var val = defines[v]? true : false;
-                  if (neg) val = !val;
-                  if_stack.push(val);
-              };
-              c = next1tok(c + 1, function (v, c) {
-                  if (v == "!") {
-                      neg = true;
-                      next1tok(c + 1, if_branch);
-                  }
-                  else
-                      if_branch(v);
-              });
-          }
-          else if (tv == "else") {
-              if_stack[if_stack.length - 1] = !if_stack[if_stack.length - 1]
-              c++;
-          }
-          else if (tv == "endif") {
-              if_stack.pop();
-              c++;
-          }
-          else if(defines[tv]) {
-            if(if_stack_enabled()) {
-              result.push('"'+defines[tv]+'"'); //stringizing
-              c++;
-            }
-          }
-          else
-            throw "unknown directive " + tv;
-      }
-      else if(ty=="identifier") {
-          if(if_stack_enabled()) {
-            var a = defines[tv];
-            if(tv!="constructor" && a) { //Every JS object has 'contructor' property though solidity uses constructor keyword!
-              if(Array.isArray(a)) {
-                c = next_bracket_close(c+1, function(args) {
-                  var x = apply_macro(a, args);
-                  result = result.concat( apply_macro(a, args) );
-                });
-              }
-              else
-                result.push(a);
-            }
-            else 
-              result.push(tv);
-          }
-          c++;
-      }
-      else if(ty=="token concat") {
-        if(if_stack_enabled()) {
-        	remove_last_whitespaces(result);
-            var n = tv.substring(2);
-            result.push(defines[n]); // get after "##"
             c++;
-            //skip whitespace
-            while(is_space(token_at(c))) {
-              c++;
+        }
+    }
+    function next_bracket_close(c, callback) {
+        var args = [];
+        while (true) {
+            var t = tokens[c];
+            // Ommission Work!  We should use aythentic token analizer...
+            if (t.type == "quote" || t.type == "number" || t.type == "identifier") {
+                args.push(token_at(c));
+            }
+            if (t.type == "close paren") {
+                callback(args);
+                return c;
+            }
+            c++;
+        }
+    }
+    function check_quote(v) {
+        //apply #XXX style macro
+        if (v.indexOf('#') == -1) return v; //easy case
+
+        for (var k in defines) {
+            var e = defines[k];
+            v = v.replace("#" + k, e);
+        }
+        return v;
+    }
+    var c = 0;
+    var result = [];
+
+    while (c < tokens.length) {
+        var t = tokens[c];
+        var ty = t.type;
+        var tv = source.substring(t.begin, t.end);
+        if (ty == "directive") {
+            tv = tv.substring(1); //remove '#'
+            if (tv == "define")
+                c = next2tok(c + 1, function (k, v) { defines[k] = v });
+            else if (tv == "undef")
+                c = next1tok(c + 1, function (k) { defines[k] = null });
+            else if (tv == "if") {
+                var neg = false;
+                function if_branch(v) {
+                    var val = defines[v] ? true : false;
+                    if (neg) val = !val;
+                    if_stack.push(val);
+                };
+                c = next1tok(c + 1, function (v, c) {
+                    if (v == "!") {
+                        neg = true;
+                        next1tok(c + 1, if_branch);
+                    }
+                    else
+                        if_branch(v);
+                });
+            }
+            else if (tv == "else") {
+                if_stack[if_stack.length - 1] = !if_stack[if_stack.length - 1]
+                c++;
+            }
+            else if (tv == "endif") {
+                if_stack.pop();
+                c++;
+            }
+            else if (defines[tv]) {
+                if (if_stack_enabled()) {
+                    result.push('"' + defines[tv] + '"'); //stringizing
+                    c++;
+                }
+            }
+            else
+                throw "unknown directive " + tv;
+        }
+        else if (ty == "identifier") {
+            if (if_stack_enabled()) {
+                var a = defines[tv];
+                if (tv != "constructor" && a) { //Every JS object has 'contructor' property though solidity uses constructor keyword!
+                    if (Array.isArray(a)) {
+                        c = next_bracket_close(c + 1, function (args) {
+                            var x = apply_macro(a, args);
+                            result = result.concat(apply_macro(a, args));
+                        });
+                    }
+                    else
+                        result.push(a);
+                }
+                else
+                    result.push(tv);
+            }
+            c++;
+        }
+        else if (ty == "token concat") {
+            if (if_stack_enabled()) {
+                remove_last_whitespaces(result);
+                var n = tv.substring(2);
+                result.push(defines[n]); // get after "##"
+                c++;
+                //skip whitespace
+                while (is_space(token_at(c))) {
+                    c++;
+                }
             }
         }
-      }
-      else if(ty=="quote") {
-        if(if_stack_enabled()) result.push(check_quote(tv));
-         c++;
-      }
-      else {
-          if (if_stack_enabled() || is_newline(tv)) //preserve newline to hold line number. solc may output compile error
-              result.push(tv);
-         c++;
-      }
+        else if (ty == "quote") {
+            if (if_stack_enabled()) result.push(check_quote(tv));
+            c++;
+        }
+        else {
+            if (if_stack_enabled() || is_newline(tv)) //preserve newline to hold line number. solc may output compile error
+                result.push(tv);
+            c++;
+        }
     }
-  
+
     return result;
 
 }
