@@ -55,17 +55,25 @@ contract BentenContractBase  {
     */
 
 #if DEBUG
-    string internal _lastError;
+    string internal _lastError = "";
+    bool internal _hasError = false;
 
     function getLastError() public view returns(string) {
         return _lastError;
     }
     function setLastError(string e) public {
         _lastError = e;
+        _hasError = bytes(e).length > 0;
+    }
+    function hasError() public view returns(bool) {
+        return _hasError;
     }
 #else
     function getLastError() public pure returns(string) {
         return "";
+    }
+    function hasError() public pure returns(bool) {
+        return false;
     }
 #endif
 

@@ -68,7 +68,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
     function balanceList() public view onlyOwner returns(address[], uint[] )  {
         address[] memory ad = new address[](_addresses.length);
         uint[] memory vol = new uint[](_addresses.length);
-        for(uint i=0; i<_addresses.length; i++) {
+        for(uint i = 0; i<_addresses.length; i++) {
             ad[i] = _addresses[i];
             vol[i] = _balances[ad[i]];
         }
@@ -84,30 +84,29 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         // amount / coin rate may be change
         if(!_open)
             ERROR_CASE("cashier is not open")
-        if(_poolVolume < coin)
+        if(_poolVolume < amount)
             ERROR_CASE("pool is insufficient")
 
         uint coin = _balances[to];
         if(coin==0) _addresses.push(to);
 
         coin += amount;
-        _poolVolume -= coin;
+        _poolVolume -= amount;
         _balances[to] = coin;
         emit Deposit(to, coin);
     }
     function withdraw(uint coin) public {
         withdraw(msg.sender, coin);
     }
-    function withdraw(address to, uint coin) internal {
+    function withdraw(address to, uint amount) internal {
         if(!_open)
             ERROR_CASE("cashier is not open")
         uint current = _balances[to];
-        if(current < coin)
+        if(current < amount)
             ERROR_CASE("coin is insufficient")
 
-        uint amount = coin;
-        current -= coin;
-        _poolVolume += coin;
+        current -= amount;
+        _poolVolume += amount;
         if(current==0) {
             delete _balances[to];
         }
@@ -118,7 +117,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         // you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
         if(!to.call.value(amount)()) revert();
 
-        emit Withdraw(to, coin);
+        emit Withdraw(to, amount);
     }
     
     function transferCoin(address from, address to, uint amount) internal {
@@ -148,8 +147,9 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
             uint m = total;
             total += coin[i];
             //uint overflow check
-            if(m > total)
+            if(m > total) {
                 ERROR_CASE("overflow on multipleTransfer!")
+            }
         }
         if(total > balanceOf(msg.sender))
             ERROR_CASE("total balance is insufficient")
