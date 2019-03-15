@@ -8,9 +8,9 @@ exports.formatVoting = function (bl) {
 	return [bl[0], bl[1].map(conv)];
 }
 
-//ro: [ [odds0, odds1, ... ], cashier_fee ]
+//ro: [ [odds0, odds1, ... ], cashier_fee, owner_fee ]
 exports.formatRefundOdds = function (ro) {
-	return [ro[0].map(conv), conv(ro[1])];
+	return [ro[0].map(conv), conv(ro[1]), conv(ro[2]), conv(ro[3])];
 }
 
 //tt: [ addresses, refund_volumes, cashier_fee, owner_fee]

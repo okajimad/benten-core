@@ -60,12 +60,15 @@ contract('Basic games', function (accounts) {
     assert.equal(b1[1][0], 300);
     assert.equal(500, await reg.calcCashierFee(10000));
 
+    //calcRefundOdds returns(int[] permil_odds, int total_refund_, int cashier_fee_, int owner_fee_)
     var refund_c0 = ut.formatRefundOdds(await reg.calcRefundOdds(game.address, c0));
-    assert.equal(refund_c0[1], 35); //cashier_fee: 35
+    assert.equal(refund_c0[2], 35); //cashier_fee: 35
+    assert.equal(refund_c0[3], 70); //owner_fee: 70
     ut.equalRoughly(refund_c0[0][0], 1000 * (700 * 0.85 / 400), 1);
     assert.equal(refund_c0[0][1], 0);
     var refund_c1 = ut.formatRefundOdds(await reg.calcRefundOdds(game.address, c1));
-    assert.equal(refund_c1[1], 35); //cashier_fee: 35
+    assert.equal(refund_c1[2], 35); //cashier_fee: 35
+    assert.equal(refund_c1[3], 70); //owner_fee: 70
     assert.equal(refund_c1[0][0], 0);
     ut.equalRoughly(refund_c1[0][1], 1000 * (700 * 0.85 / 300), 1);
 

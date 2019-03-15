@@ -26,6 +26,9 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
     function documentHash() public pure returns (bytes32) {
       return 0x01234567890123456789012345678901;
     }
+    function gameClass() public pure returns(string) {
+			return "VariableOddsGame_V4_R4";
+		}
 
 
 	function cashierFee() external view returns(FeeType, uint) {
@@ -68,7 +71,7 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		}
 		
 		int[] memory odds = new int[](contents.length);
-		for(uint i=0; i<odds.length; i++) 
+		for(uint i = 0; i<odds.length; i++) 
 			if(contents[i] == truth) odds[i] = volumes[i]==0? 0 : int(total_refund * 1000 / volumes[i]);
 
 		return (odds, int(total_refund), int(cashier_fee), int(total_bet) - int(total_refund) - int(cashier_fee));

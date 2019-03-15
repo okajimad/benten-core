@@ -152,6 +152,7 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE    	is BettingTarget_V ##VOTE_S
 
     //partial refunding operation
     function refundPartial(uint start, uint end) public {
+        if(end > _refundRemains.length) end = _refundRemains.length;
         for(uint i = start; i < end; i++) {
             uint v = _refundRemains[i];
             if(v > 0) {

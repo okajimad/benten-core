@@ -147,9 +147,8 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
             uint m = total;
             total += coin[i];
             //uint overflow check
-            if(m > total) {
+            if(m > total)
                 ERROR_CASE("overflow on multipleTransfer!")
-            }
         }
         if(total > balanceOf(msg.sender))
             ERROR_CASE("total balance is insufficient")
