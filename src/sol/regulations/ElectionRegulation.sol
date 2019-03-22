@@ -54,7 +54,7 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
 		uint[] memory count_unused;
 		(contents, count_unused, volumes) = game.currentBettingList_Wide();
 
-		bytes8 candidate_mask = 0x0000000000000001;
+		bytes8 candidate_mask = 0x0000000100000000; // caution! 
 		int[] memory odds = new int[](contents.length);
   	int c;
 		int o;
@@ -72,7 +72,7 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
 	}
 
 	function oneCandidate(bytes8 candidate_mask, bytes8 truth, int[] memory odds, bytes8[] memory contents, uint[] memory volumes) private view returns(int cashier_fee, int owner_fee, int refund) {
-			bytes8 vote_win = candidate_mask | 0x80000000;
+			bytes8 vote_win = candidate_mask | 0x8000000000000000;
 			bytes8 vote_lose = candidate_mask;
 			int32 index_win = findIndex(contents, vote_win);
 			int32 index_lose = findIndex(contents, vote_lose);
@@ -107,5 +107,29 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
         return -1;
     }
 
+	function candidateTest(IGame game, bytes8 candidate_mask, bytes8 truth) public view returns(int cashier_fee, int owner_fee, int refund) {
+		bytes8[] memory contents;
+		uint[] memory volumes;
+		uint[] memory count_unused;
+		(contents, count_unused, volumes) = game.currentBettingList_Wide();
+
+			bytes8 vote_win = candidate_mask | 0x80000000;
+			bytes8 vote_lose = candidate_mask;
+			int32 index_win = findIndex(contents, vote_win);
+			int32 index_lose = findIndex(contents, vote_lose);
+			uint volume_win = index_win==-1? 0 : volumes[uint(index_win)];
+			uint volume_lose = index_lose==-1? 0 : volumes[uint(index_lose)];
+			uint candidate_volume = volume_win + volume_lose; // total betting amount for the candidate
+
+			if(candidate_volume > 0) {
+				cashier_fee = int(calcCashierFee(candidate_volume));
+				owner_fee = int(calcOwnerFee(candidate_volume));
+				refund = int(candidate_volume) - cashier_fee - owner_fee;
+				//bool win = (truth & candidate_mask) != 0; // number of local variables get limit!!!!
+			}
+
+			return (cashier_fee, owner_fee, refund);
+
+	}
 
 }
