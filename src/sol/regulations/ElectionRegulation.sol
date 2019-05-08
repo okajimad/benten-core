@@ -32,21 +32,31 @@ import "./FixedOwnerFeeRegulation.sol";
 
 contract ElectionRegulation is FixedOwnerFeeRegulation {
 
-	constructor(FeeType owner_ft, uint owner_fv, FeeType cashier_ft, uint cashier_fv) public FixedOwnerFeeRegulation(owner_ft, owner_fv, cashier_ft, cashier_fv) {
+	constructor(FeeType owner_ft, uint owner_fv, FeeType cashier_ft, uint cashier_fv) public
+		FixedOwnerFeeRegulation(owner_ft, owner_fv, cashier_ft, cashier_fv) {
 	}
 
-    function description() public pure returns(string) {
-      return "";
-    }
-    function url() public pure returns (string) {
-      return "https://.....";
-    }
-    function documentHash() public pure returns (bytes32) {
-      return 0x01234567890123456789012345678901;
-    }
+	function description() public pure returns(string) {
+		return "";
+	}
 	function gameClass() public pure returns(string) {
 		return "ExPostGame_V4_R4";
 	}
+
+	function isValidBet(IGame, bytes8 bet) public view returns(bool) {
+		// for election, every betting content must have exactly 1 bit of 1 and other bit is 0.
+		bytes8 t = 1;
+		bool found = false;
+		for(uint i = 0; i < 32; i++) {
+			if(t == bet) found = true;
+
+			t <<= 1;
+		}
+
+		return found;
+
+	}
+
 
 	function calcRefundOdds(IGame game, bytes8 truth) public view returns(int[] permil_odds_, int total_refund, int cashier_fee, int owner_fee) {
 		bytes8[] memory contents;
@@ -54,7 +64,7 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
 		uint[] memory count_unused;
 		(contents, count_unused, volumes) = game.currentBettingList_Wide();
 
-		bytes8 candidate_mask = 0x0000000100000000; // caution! 
+		bytes8 candidate_mask = 0x0000000100000000; // caution!
 		int[] memory odds = new int[](contents.length);
   	int c;
 		int o;
@@ -99,7 +109,7 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
 			return (cashier_fee, owner_fee, refund);
 	}
 
-    function findIndex(bytes8[] memory bettings, bytes8 content) internal view returns(int32) {
+    function findIndex(bytes8[] memory bettings, bytes8 content) internal pure returns(int32) {
         for(uint i = 0; i<bettings.length; i++) {
             if(content == bettings[i])
                 return int32(i);
@@ -107,7 +117,7 @@ contract ElectionRegulation is FixedOwnerFeeRegulation {
         return -1;
     }
 
-	function candidateTest(IGame game, bytes8 candidate_mask, bytes8 truth) public view returns(int cashier_fee, int owner_fee, int refund) {
+	function candidateTest(IGame game, bytes8 candidate_mask, bytes8) public view returns(int cashier_fee, int owner_fee, int refund) {
 		bytes8[] memory contents;
 		uint[] memory volumes;
 		uint[] memory count_unused;

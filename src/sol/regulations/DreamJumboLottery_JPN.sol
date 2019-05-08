@@ -7,14 +7,8 @@ contract DreamJumboLottery_JPN is IRegulation {
        この番号を(X-1)*100000 + (Y-100000) とすれば、0～9999999 の整数に割り振れる。
        これは３バイト必要なのでbytes3で表す
     */
-    function description() public view returns(string) {
+    function description() public pure returns(string) {
       return "";
-    }
-    function url() public view returns (string) {
-      return "https://.....";
-    }
-    function documentHash() public view returns (bytes32) {
-      return 0x01234567890123456789012345678901;
     }
 
 

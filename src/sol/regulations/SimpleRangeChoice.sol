@@ -4,37 +4,36 @@ import "../MajorityVote_R4.sol";
 import "../ETHCashier.sol";
 import "./ExPostRegulation.sol";
 
-contract GenericSport_WinLose is ExPostRegulation {
+/* 8 byte bet content means: [min_value(4byte)] [max_value(4byte)]
+   if the truth value is within the range, the better wins. otherwise loses.
+ */
+
+contract SimpleRangeChoice is ExPostRegulation {
 
 	constructor(FeeType owner_ft, uint owner_fv, FeeType cashier_ft, uint cashier_fv) public
 	ExPostRegulation(owner_ft, owner_fv, cashier_ft, cashier_fv) {
 	}
 
-	//description of voting content:
-	//byte [0]  confiscated game(1), valid game(0)
-	//byte [1]  home team/person score
-	//byte [2]  away team/person score
-
 	function description() public pure returns(string) {
 		return "Benten betting regulation for Soccer";
 	}
-
 	function gameClass() public pure returns(string) {
 		return "ExPostGame_V4_R4";
 	}
+	function isValidBet(IGame game, bytes8 bet) public view returns(bool) {
 
-
+		return game.hasDescription_Wide(bet);
+	}
   function correctAnswerList_Wide(bytes8 truth, bytes8[] votes) public view returns(int[] answers) {
-  	bool aborted = truth[0]!=0; // if the game is aborted in real world
-  	byte home_byte = truth[1]>=truth[2]? byte(1) : byte(0);
-        byte away_byte = truth[1]<=truth[2]? byte(1) : byte(0);
 
 		answers = new int[](votes.length);
+		uint itruth = (uint)((truth & 0xFFFFFFFF00000000)) >> 32;
 		for(uint i = 0; i < votes.length; i++) {
 			bytes8 vote = votes[i];
-			if(aborted)
-				answers[i] = -1;
-			else if(vote[1]==home_byte && vote[2]==away_byte)  //win
+			uint range_min = (uint)((vote & 0xFFFF000000000000) >> 48);
+			uint range_max = (uint)((vote & 0x0000FFFF00000000) >> 32);
+
+			if(range_min <= itruth && itruth <= range_max)  //win
 				answers[i] = 1;
 			else //lose
 				answers[i] = 0;

@@ -32,6 +32,11 @@ contract FixedOddsRegulation is BentenContractBase, IRegulation {
 		return "undefined game";
 	}
 
+	function isValidBet(IGame, bytes8) public view returns(bool) {
+		return true;
+	}
+
+
 
 	/*
 	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.

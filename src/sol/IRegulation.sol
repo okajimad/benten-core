@@ -1,11 +1,10 @@
 pragma solidity ^0.4.0;
 import "./BentenContractBase.sol";
+import "./IGame.sol";
 
 interface IRegulation {
 
     function description() external view returns(string);
-    function url() external view returns(string);
-    function documentHash() external view returns (bytes32);
 
     function gameClass() external pure returns(string);
 
@@ -13,5 +12,5 @@ interface IRegulation {
 
     function calcCashierFee(uint total_bettings) external view returns(uint);
 
-
+    function isValidBet(IGame game, bytes8 bet) external view returns(bool);
 }

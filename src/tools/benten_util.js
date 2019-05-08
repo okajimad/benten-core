@@ -1,6 +1,10 @@
 
 const conv = function (e) { return (e.toNumber) ? e.toNumber() : e; };
 
+exports.formatArray = function(a) {
+	return a.map(conv);
+}
+
 exports.formatBetting = function (bl) {
 	return [bl[0], bl[1].map(conv), bl[2].map(conv)];
 }

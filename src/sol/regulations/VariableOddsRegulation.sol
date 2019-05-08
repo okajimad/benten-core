@@ -17,18 +17,12 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		_cashierFee = fee;
 		_version = "VariableOddsRegulation";
 	}
-    function description() public pure returns(string) {
-      return "Benten betting regulation for Soccer";
-    }
-    function url() public pure returns (string) {
-      return "https://.....";
-    }
-    function documentHash() public pure returns (bytes32) {
-      return 0x01234567890123456789012345678901;
-    }
-    function gameClass() public pure returns(string) {
-			return "VariableOddsGame_V4_R4";
-		}
+	function description() public pure returns(string) {
+		return "Benten betting regulation for Soccer";
+	}
+	function gameClass() public pure returns(string) {
+		return "VariableOddsGame_V4_R4";
+	}
 
 
 	function cashierFee() external view returns(FeeType, uint) {
@@ -44,18 +38,23 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 	}
 
 	// betting content may be simpler than voting result
-	// for example, in sport games, following case is usual: [voting content:actual score] [betting content: select winner] 
+	// for example, in sport games, following case is usual: [voting content:actual score] [betting content: select winner]
 	function convertVoteResultToBet(bytes8 truth) public pure returns(bytes8) {
 		return truth;
+	}
+
+	function isValidBet(IGame, bytes8 ) public view returns(bool) {
+		return true;
 	}
 
 	/*
 	watch betting status of 'game' and returns refunds odds for given 'truth'. fees are considered.
 	if odds is -1, it means the game result is confiscated.
 	*/
-	function calcRefundOdds(IGame game_, bytes8 truth) public view returns(int[] permil_average_odds, int total_refund_, int cashier_fee_, int owner_fee) {
-		
-		truth = convertVoteResultToBet(truth);
+	function calcRefundOdds(IGame game_, bytes8 truth_b) public view
+	returns(int[] permil_average_odds, int total_refund_, int cashier_fee_, int owner_fee) {
+
+		bytes8 truth = convertVoteResultToBet(truth_b);
 
 		uint total_bet = game_.totalBettings();
 
@@ -69,9 +68,9 @@ contract VariableOddsRegulation is BentenContractBase, IRegulation {
 		if(cashier_fee > total_bet) {
 			cashier_fee = 0;
 		}
-		
+
 		int[] memory odds = new int[](contents.length);
-		for(uint i = 0; i<odds.length; i++) 
+		for(uint i = 0; i < odds.length; i++)
 			if(contents[i] == truth) odds[i] = volumes[i]==0? 0 : int(total_refund * 1000 / volumes[i]);
 
 		return (odds, int(total_refund), int(cashier_fee), int(total_bet) - int(total_refund) - int(cashier_fee));

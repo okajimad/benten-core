@@ -129,6 +129,18 @@ contract GameBase_V ##VOTE_SIZE _R ##RESULT_SIZE    	is BettingTarget_V ##VOTE_S
         CandidateDescription memory ne = CandidateDescription(content, new_description);
         _descriptions.push(ne);
     }
+    function hasDescription_Wide(bytes8 v8) public view returns(bool) {
+        VOTE_TYPE content = VOTE_TYPE(v8);
+        for(uint i=0; i<_descriptions.length; i++) {
+            CandidateDescription storage e = _descriptions[i];
+            if(e.content == content) {
+                return true;
+            }
+        }
+        return false;
+
+    }
+
     function setDescription_Multiple(VOTE_TYPE content1, string new_description1, VOTE_TYPE content2, string new_description2, VOTE_TYPE content3, string new_description3, VOTE_TYPE content4, string new_description4, VOTE_TYPE content5, string new_description5) public  {
         if(bytes(new_description1).length > 0) setDescription(content1, new_description1);
         if(bytes(new_description2).length > 0) setDescription(content2, new_description2);

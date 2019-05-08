@@ -8,7 +8,7 @@ contract ValidateSignature {
 	function verify(bytes32 r, bytes32 s, uint8 v, bytes32 hash) public pure returns(address) {
 		//we found this prefix trick info at https://ethereum.stackexchange.com/questions/15364/ecrecover-from-geth-and-web3-eth-sign
 		bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-		bytes32 prefixedHash = keccak256(prefix, hash);
+		bytes32 prefixedHash = keccak256(abi.encodePacked(prefix, hash));
 		return ecrecover(prefixedHash, v, r, s);
 	}
 

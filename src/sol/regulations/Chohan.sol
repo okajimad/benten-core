@@ -9,12 +9,6 @@ contract ChohanRegulation is ExAnteRegulation {
     function description() public pure returns(string) {
       return "Benten betting regulation for Cho-han";
     }
-    function url() public pure returns (string) {
-      return "https://.....";
-    }
-    function documentHash() public pure returns (bytes32) {
-      return 0x01234567890123456789012345678901;
-    }
 
 	int private _winner_refund_ratio;
 

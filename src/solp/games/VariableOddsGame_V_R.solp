@@ -54,8 +54,9 @@ contract VariableOddsGame_V ##VOTE_SIZE _R ##RESULT_SIZE    	is GameBase_V ##VOT
     function betBody(address from, VOTE_TYPE content, uint coin) internal {
         if(!betAcceptable()) 
             ERROR_CASE("betting not acceptable")
-        if(_closed)
-            ERROR_CASE("betting is already closed")
+        if(!_regulation.isValidBet(this, content))
+            ERROR_CASE("invalid bet content")
+
         entry(from, content, coin);
     }
 
