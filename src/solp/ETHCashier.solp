@@ -28,7 +28,7 @@ contract ETHCashier is CashierBase  {
         if(coin==0)
             return;
         transferCoin(msg.sender, to, coin);
-        withdraw(to, coin); //direct withdraw
+        withdrawInternal(to, coin); //direct withdraw
     }
     
     //bulk transfer
@@ -37,7 +37,7 @@ contract ETHCashier is CashierBase  {
 
         for(uint i=0; i<coin.length; i++) {
             transferCoin(msg.sender, to[i], coin[i]);
-            withdraw(to[i], coin[i]);
+            withdrawInternal(to[i], coin[i]);
         }
 
     }

@@ -53,15 +53,21 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
     function poolVolume() public view returns(uint) {
         return _poolVolume;
     }
-    function balanceOf(address a) public view returns(uint) {
-        return _balances[a];
-    }
 
     function addIssue(uint value) public onlyOwner {
         if(!_allowAdditionalIssue)
             ERROR_CASE("!_allowAdditionalIssue")
         _issuedVolume += value;
         _poolVolume += value;
+    }
+
+    //value conversion
+    //default implementation is same value exchange
+    function rateOfCoin(uint wei_) public view returns(uint) {
+        return wei_;
+    }
+    function rateOfWei(uint coin) public view returns(uint) {
+        return coin;
     }
 
     //list all balances
@@ -75,7 +81,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         return (ad, vol);
     }
     function deposit() public payable { //NOT external, since bet() calls deposit
-        depositInternal(msg.sender, msg.value);
+        depositInternal(msg.sender, rateOfCoin(msg.value));
     }
     function depositInternal(address to, uint amount) internal {
         //if(isContract(to)) 
@@ -93,12 +99,12 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         coin += amount;
         _poolVolume -= amount;
         _balances[to] = coin;
-        emit Deposit(to, coin);
+        emit Deposit(to, amount);
     }
     function withdraw(uint coin) public {
-        withdraw(msg.sender, coin);
+        withdrawInternal(msg.sender, coin);
     }
-    function withdraw(address to, uint amount) internal {
+    function withdrawInternal(address to, uint amount) internal {
         if(!_open)
             ERROR_CASE("cashier is not open")
         uint current = _balances[to];
@@ -115,7 +121,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
 
         // if this transfer fails, an exception is thrown.
         // you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
-        if(!to.call.value(amount)()) revert();
+        if(!to.call.value(rateOfWei(amount))()) revert();
 
         emit Withdraw(to, amount);
     }
@@ -150,7 +156,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
             if(m > total)
                 ERROR_CASE("overflow on multipleTransfer!")
         }
-        if(total > balanceOf(msg.sender))
+        if(total > _balances[msg.sender])
             ERROR_CASE("total balance is insufficient")
     }
 
@@ -188,14 +194,6 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         t.refundPartial(start, end);
     }
 /*
-    function isContract(address addr) private view returns (bool is_contract) {
-        uint length;
-        assembly {
-            //retrieve the size of the code on target address, this needs assembly
-            length := extcodesize(addr)
-        }
-        return (length>0);
-    }
     function hashContract(address addr) public view returns(bytes32) {
         uint length;
         assembly {

@@ -4,22 +4,46 @@ import "./BettingTarget_V4.sol";
 import "./CashierBase.sol";
 import "./MajorityVote_R4.sol";
 import "./IGame.sol";
+import "./ERC223_Interface.sol";
+
 /*
   Warning: This .solp file is converted solidity source code by the benten preprocessor
   You should 'npm run preprocess' to get solidity file
 */
-contract CoinCashier is CashierBase  {
+contract CoinCashier is CashierBase , ERC223 {
     string private OutputFile = #FILE;
 
+    string internal _symbol;
 
-    constructor(string name, uint initialIssue, bool allowAdditionalIssue) public {
+    //conversion rate
+    uint internal _ETHToCoinRatePermil;
+    uint internal _CoinToETHRatePermil;
+
+
+    constructor(string name, string symbol, uint initialIssue, bool allowAdditionalIssue) public {
         _version = "CoinCashier.0";
         _name = name;
+        _symbol = symbol;
         _issuedVolume = initialIssue;
         _poolVolume = initialIssue;
         _allowAdditionalIssue = allowAdditionalIssue;
         _open = true;
+        _ETHToCoinRatePermil = 1000;
+        _CoinToETHRatePermil = 1000;
     }
+
+    function setCoinRate(uint eth_to_coin, uint coin_to_eth) public onlyOwner {
+        _ETHToCoinRatePermil = eth_to_coin;
+        _CoinToETHRatePermil = coin_to_eth;
+    }
+
+    function rateOfCoin(uint wei_) public view returns(uint) {
+        return wei_ * _ETHToCoinRatePermil / 1000;
+    }
+    function rateOfWei(uint coin) public view returns(uint) {
+        return coin * _CoinToETHRatePermil / 1000;
+    }
+
     //single transfer
     function transferCoin(address to, uint coin) public {
         if(coin==0)
@@ -65,5 +89,51 @@ contract CoinCashier is CashierBase  {
         b.ownerSupply(coin);
     }
 
+    //ERC223 part
+    function name() public view returns (string) {
+        return _name;
+    }
+    function symbol() public view returns (string) {
+        return _symbol;
+    }
+    function decimals() public view returns (uint8) {
+        return 18;
+    }
+    function totalSupply() public view returns (uint256) {
+        return _issuedVolume;
+    }
+    function balanceOf(address who) public view returns(uint) {
+        return _balances[who];
+    }
+
+    function transfer(address to, uint value) public returns (bool ok) {
+        bytes memory empty_data;
+        return transfer(to, value, empty_data);
+    }
+    function transfer(address, uint, bytes, string) public returns (bool ) {
+        //we does not support custom fallback for security
+        revert();
+    }
+    function transfer(address to, uint value, bytes data) public returns (bool ok) {
+        transferCoin(msg.sender, to, value);
+        if(isContract(to)) {
+            ERC223_ContractReceiver receiver = ERC223_ContractReceiver(to);
+            receiver.tokenFallback(msg.sender, value, data);
+        }
+        emit Transfer(msg.sender, to, value, data);
+        return true;
+    }
+
+
+
+
+    function isContract(address addr) private view returns (bool is_contract) {
+        uint length;
+        assembly {
+            //retrieve the size of the code on target address, this needs assembly
+            length := extcodesize(addr)
+        }
+        return (length>0);
+    }
 
 }
