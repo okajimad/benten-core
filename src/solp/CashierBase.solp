@@ -27,9 +27,9 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
     //if the owner set delegatedAddress, some transactions (such as tasks executed at fixed time) from delegatedAddress are permitted
     address internal _delegatedAddress;
 
-    event Deposit(address indexed account, uint amount);
-    event Withdraw(address indexed account, uint amount);
-    event TransferCoin(address indexed from, address indexed to, uint amount);
+    event Deposited(address indexed account, uint amount);
+    event Withdrawed(address indexed account, uint amount);
+    event TransferedCoin(address indexed from, address indexed to, uint amount);
 
     function getName() public view returns(string) {
         return _name;
@@ -59,6 +59,14 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
             ERROR_CASE("!_allowAdditionalIssue")
         _issuedVolume += value;
         _poolVolume += value;
+    }
+
+    //owner can give coin anyone including owner himself
+    function giveCoin(address to, uint value) public onlyOwner {
+        if(value > _poolVolume) 
+            ERROR_CASE("pool is insufficient")
+        _balances[to] += value;
+        _poolVolume -= value;
     }
 
     //value conversion
@@ -99,7 +107,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         coin += amount;
         _poolVolume -= amount;
         _balances[to] = coin;
-        emit Deposit(to, amount);
+        emit Deposited(to, amount);
     }
     function withdraw(uint coin) public {
         withdrawInternal(msg.sender, coin);
@@ -123,7 +131,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         // you can see the difference of payment methods at https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9
         if(!to.call.value(rateOfWei(amount))()) revert();
 
-        emit Withdraw(to, amount);
+        emit Withdrawed(to, amount);
     }
     
     function transferCoin(address from, address to, uint amount) internal {
@@ -141,7 +149,7 @@ contract CashierBase is BentenContractBase, ICoinCashier  {
         dst += amount;
         _balances[to] = dst;
         _balances[from] = src;
-        emit TransferCoin(from, to, amount);
+        emit TransferedCoin(from, to, amount);
     }
 
     function checkMultiTransferCoin(address[] to, uint[] coin) internal {

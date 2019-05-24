@@ -9,8 +9,8 @@ contract('CoinCashier', function (accounts) {
 
 	it("cashier_basic", async function () {
 		var cashier = await CoinCashier.new("test1", 10000, false, { from: a0 });
-		var deposit_handler = truffle_event.extractor(CoinCashier.abi, "Deposit");
-		var withdraw_handler = truffle_event.extractor(CoinCashier.abi, "Withdraw");
+		var deposit_handler = truffle_event.extractor(CoinCashier.abi, "Deposited");
+		var withdraw_handler = truffle_event.extractor(CoinCashier.abi, "Withdrawed");
 		var event_count = 0;
 		assert.equal(web3.eth.getBalance(cashier.address), 0);
 

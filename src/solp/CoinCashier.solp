@@ -20,7 +20,7 @@ contract CoinCashier is CashierBase , ERC223 {
     uint internal _CoinToETHRatePermil;
 
 
-    constructor(string name, string symbol, uint initialIssue, bool allowAdditionalIssue) public {
+    constructor(string name, string symbol, uint eth_to_coin, uint coin_to_eth, uint initialIssue, bool allowAdditionalIssue) public {
         _version = "CoinCashier.0";
         _name = name;
         _symbol = symbol;
@@ -28,11 +28,6 @@ contract CoinCashier is CashierBase , ERC223 {
         _poolVolume = initialIssue;
         _allowAdditionalIssue = allowAdditionalIssue;
         _open = true;
-        _ETHToCoinRatePermil = 1000;
-        _CoinToETHRatePermil = 1000;
-    }
-
-    function setCoinRate(uint eth_to_coin, uint coin_to_eth) public onlyOwner {
         _ETHToCoinRatePermil = eth_to_coin;
         _CoinToETHRatePermil = coin_to_eth;
     }
@@ -61,6 +56,21 @@ contract CoinCashier is CashierBase , ERC223 {
 
     }
 
+    //ETH refunding to owner
+    function refundToOwner(uint value) public onlyOwner {
+        uint debit_eth = rateOfWei(_issuedVolume - _poolVolume);
+        uint balance = address(this).balance;
+        if(balance < value) revert(); // avoid underflow of [balance - value]
+        if(balance - value < debit_eth) revert(); // excess debt not allowed
+
+        if(!_owner.call.value(value)()) revert(); //refund to cashier owner
+    }
+    function refundToOwnerLimit() public view returns(uint, uint, uint) {
+        uint debit_eth = rateOfWei(_issuedVolume - _poolVolume);
+        uint balance = address(this).balance;
+        return (_issuedVolume - _poolVolume, debit_eth, balance - debit_eth);
+    }
+
     //Betting or Voting Root Function
 
     //  only coin owner can call BettingTarget through this CoinCashier
@@ -81,6 +91,14 @@ contract CoinCashier is CashierBase , ERC223 {
 
     //Game Owner Supply
     function ownerSupply(address target, uint coin) public {
+        BettingTarget_V4 b = BettingTarget_V4(target);
+        if(b.getOwner() != msg.sender) 
+            ERROR_CASE("Only game/voting owner can call ownerSupply")
+        transferCoin(msg.sender, target, coin);
+        // BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
+        b.ownerSupply(coin);
+    }
+    function ownerSupply8(address target, uint coin) public {
         BettingTarget_V8 b = BettingTarget_V8(target);
         if(b.getOwner() != msg.sender) 
             ERROR_CASE("Only game/voting owner can call ownerSupply")

@@ -35,7 +35,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
     bool private _checkMajorityOnClose; // if this flag is true and 90% majority does not exist, lock time is extended
 
     event Voted(address indexed voter, RESULT_TYPE content, uint volume);
-    event MajorityReversal(address indexed voter, RESULT_TYPE content, uint volume);
+    event MajorityReversed(address indexed voter, RESULT_TYPE content, uint volume);
     event NoMajority();
 
     constructor(address cashier, address regulation, address owner, uint open_time, uint lock_time, uint vote_total_limit, uint vote_one_time_limit) public ResultAnnouncement_R ##RESULT_SIZE (cashier, regulation, owner, open_time, lock_time) {
@@ -101,7 +101,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
             // in case of reversals ( it may be malicious! ), the lock time is extended automatically.
             // the other justice voters get a chance of steal the malicious votes.
             if(index!=major_index && currentVotingByIndex(index)+volume >= major_total) {
-                emit MajorityReversal(from, content, volume);
+                emit MajorityReversed(from, content, volume);
                 _lockTime += _timeExtensionOnReversal;
                 _lockTimeExtensionCount++;
             }
@@ -110,8 +110,11 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
         _totalBettings += volume;
         Vote storage ch = _voters[from];
         bool new_voter = ch.volume==0;
+#if DEBUG
+#else
         if(!new_voter)
             ERROR_CASE("voting is allowed one time per address")
+#endif
         // in case of multiple votes, the last vote content is valid. volume is total votes.
         ch.index = index;
         ch.volume = ch.volume + volume;
@@ -213,6 +216,9 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
             ERROR_CASE("current time is before voting close time")
         if(_closed)
             ERROR_CASE("voting is already closed")
+        // if there are no votes, the result is not decidable
+        if(_candidates.length==0)
+            revert();
         /* this limitation is deprecated
         If actual results are subtle, you may not be able to get 90%
 

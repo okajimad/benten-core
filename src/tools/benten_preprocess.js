@@ -74,7 +74,7 @@ function preprocess_solp(build_env, input_dir) {
       solfile.dir().mkdir();
       var solp_source = fs.readFileSync(file.toString(), encoding);
       //run preprocessor
-      build_env.defines["FILE"] = output_rel_path;
+      build_env.defines["FILE"] = output_rel_path.replace("\\", "\\\\");
       var preprocessor_result = prep.preprocess(solp_source, merge(build_env.defines, sz_def)).join("")
       fs.writeFileSync(solfile.toString(), preprocessor_result);
 
@@ -109,8 +109,9 @@ function preprocess(build_env) {
 
 }
 
-var now = '"' + new Date().toString() + '"';
-var debug_env = {
+const now = '"' + new Date().toString() + '"';
+const debug_env = {
+  "name":"debug",
   "defines":
   {
     "DEBUG": 1,
@@ -118,14 +119,17 @@ var debug_env = {
     "ERROR_CASE": ["{", "setLastError(", "$0", "); return;}"]
   }
 };
-var release_env = {
+const release_env = {
+  "name":"release",
   "defines":
   {
     "DEBUG": 0,
     "BUILD_TIME": now,
-    "ERROR_CASE": ["revert;"]
+    "ERROR_CASE": ["revert();"]
   }
 };
 
-preprocess(debug_env);
-
+const env_name = process.argv[2]; // node benten_preprocess.js [debug/release]
+const env = env_name=="release"? release_env : debug_env;
+console.log("benten preprocess env_name=%s", env.name);
+preprocess(env); //run

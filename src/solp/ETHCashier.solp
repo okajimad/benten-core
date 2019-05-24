@@ -77,6 +77,18 @@ contract ETHCashier is CashierBase  {
         // BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
         b.ownerSupply(amount);
     }
+    function ownerSupply8(address target) payable public {
+        uint amount = msg.value;
+        address p = msg.sender;
+        depositInternal(p, amount);
+
+        BettingTarget_V8 b = BettingTarget_V8(target);
+        if(b.getOwner() != msg.sender) 
+            ERROR_CASE("Only game/voting owner can call ownerSupply")
+        transferCoin(msg.sender, target, amount);
+        // BettingTarget.ownerSupply() accepts only if the caller is CoinCashier
+        b.ownerSupply(amount);
+    }
     /*
     function deployAndSetVoting_R4(address game_, uint vote_open_time, uint vote_lock_time, uint vote_volume_upper_limit) public payable {
         IGame game = IGame(game_);

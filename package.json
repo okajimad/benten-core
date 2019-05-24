@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "preprocess": "node src/tools/benten_preprocess.js",
-    "compile": "npm run preprocess && truffle compile",
+    "compile": "node src/tools/benten_preprocess.js && truffle compile",
+    "compile_release": "node src/tools/benten_preprocess.js release && truffle compile",
     "clean": "node src/tools/clean.js",
     "test": "mocha mochatest -g ",
     "soltest": "truffle test "
