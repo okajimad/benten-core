@@ -14,7 +14,7 @@ contract('Basic games', function (accounts) {
   var c0 = "0x00010005";
   var c1 = "0x0006000a";
   it("SimpleRangeChoice", async function () {
-    var cashier = await Cashier.new("test", 10000, false, { from: a0 });
+    var cashier = await Cashier.new("test", "TST", 1000, 1000, 10000, false, { from: a0 });
     var reg = await Regulation.new(1, 100, 1, 50, { from: a0 }); //owner fee: 10%, cashier fee: 5%
     var now = (await cashier.getNow()).toNumber();
     var voting = await MajorityVote.new(cashier.address, reg.addres, a0, now + 120, now + 180, 0, 0, { from: a0 });

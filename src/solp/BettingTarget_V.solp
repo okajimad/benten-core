@@ -40,8 +40,11 @@ contract BettingTarget_V ##VOTE_SIZE   	is BentenContractBase {
             ERROR_CASE("betting source is not ICoinCashier")
         if(_totalBettingsLimit!=0 && _totalBettings + coin > _totalBettingsLimit)
             ERROR_CASE("exceeding total betting limit")
-        if(_oneTimeBettingsLimit!=0 && coin > _oneTimeBettingsLimit)
-            ERROR_CASE("exceeding one time betting limit")
+        
+        if(sender != _owner) { // owner is not affected by this limit restriction
+          if(_oneTimeBettingsLimit!=0 && coin > _oneTimeBettingsLimit)
+              ERROR_CASE("exceeding one time betting limit")
+        }
 
         betBody(sender, content, coin);
     }

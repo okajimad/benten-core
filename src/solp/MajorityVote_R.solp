@@ -112,7 +112,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
         bool new_voter = ch.volume==0;
 #if DEBUG
 #else
-        if(!new_voter)
+        if(!new_voter && _owner!=from)
             ERROR_CASE("voting is allowed one time per address")
 #endif
         // in case of multiple votes, the last vote content is valid. volume is total votes.
@@ -219,16 +219,17 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
         // if there are no votes, the result is not decidable
         if(_candidates.length==0)
             revert();
-        /* this limitation is deprecated
-        If actual results are subtle, you may not be able to get 90%
-
-        if(_checkMajorityOnClose && majorityRatioPermil() < 900) {
+        
+        //If actual results are subtle, you may not be able to get 60%
+/*
+        if(_checkMajorityOnClose && majorityRatioPermil() < 600) {
             emit NoMajority();
             _lockTime += _timeExtensionOnReversal;
             _lockTimeExtensionCount++;
             return;
         }
-        */
+*/
+        
         uint32 max_index = 0;
         uint max = 0;
         uint total = 0;
