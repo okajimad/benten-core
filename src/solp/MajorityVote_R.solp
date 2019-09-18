@@ -16,9 +16,6 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
     address[] private _addresses;
 
     uint private _votingFee;
-    uint private _freeVoteUnit; // unit amount of coins for free votings
-    uint private _freeVoteRemainCount; // remaining count of free votings
-    address[] private _freeVoteAddresses;
     RESULT_TYPE[] private _candidates;
 
     //filled at the time of voting lock
@@ -164,7 +161,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
 
         uint32 major_index = currentMajorIndex();
         uint major_total = currentVotingByIndex(major_index);
-        return major_total * 1000 / (_totalBettings + _votingFee + ( _freeVoteUnit * _freeVoteRemainCount ) );
+        return major_total * 1000 / (_totalBettings + _votingFee  );
     }
 
     function currentVotingList() public view returns(RESULT_TYPE[], uint[], uint ) {
@@ -174,41 +171,13 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
             Vote storage v = _voters[a];
             volumes[v.index] += v.volume;
         }
-        return (_candidates, volumes, _votingFee + ( _freeVoteUnit * _freeVoteRemainCount ));
+        return (_candidates, volumes, _votingFee );
     }
     // bytes[] is not allowed by solidity compiler. then use fixed size instead.
     function candidateList() public view returns(RESULT_TYPE[] memory) {
         return _candidates;
     }
 
-    // free voting feature
-    function setFreeVotings(uint unit, uint count) public onlyOwner {
-        if(_freeVoteUnit == 0) _freeVoteUnit = unit; // _freeVoteUnit is configurable only first time
-        if(_freeVoteUnit * count > _votingFee) 
-            ERROR_CASE("insufficient voting fee reservation")
-
-        _votingFee -= _freeVoteUnit * count;
-        _freeVoteRemainCount += count;
-    }
-    function getFreeVotings() public view returns(uint, uint) {
-        return (_freeVoteUnit, _freeVoteRemainCount);
-    }
-    function containsFreeVoteAddress(address a) public view returns(bool) {
-        for(uint i=0; i<_freeVoteAddresses.length; i++)
-            if(_freeVoteAddresses[i] == a) return true;
-        return false;
-    }
-    function freeVote(RESULT_TYPE content) public {
-        if(_freeVoteRemainCount==0 || _freeVoteUnit==0) revert();
-        if(containsFreeVoteAddress(msg.sender)) 
-            ERROR_CASE("duplicated free voting")
-        _freeVoteRemainCount--;
-        if(!voteAcceptable()) //voting owner can vote any time to protect from malicious voting
-            ERROR_CASE("voting is not acceptable")
-        
-        vote(msg.sender, content, _freeVoteUnit);
-        _freeVoteAddresses.push(msg.sender);
-    }
 
     //Close Voting
     function close() public onlyOwnerOrCashier { 
@@ -253,7 +222,7 @@ contract MajorityVote_R ##RESULT_SIZE   	is ResultAnnouncement_R ##RESULT_SIZE {
         _finalVoteVolume = total;
         _truthIndex = max_index;
 
-        uint fv = _finalVoteVolume + _votingFee + (_freeVoteRemainCount * _freeVoteUnit); //remaining free vote
+        uint fv = _finalVoteVolume + _votingFee;
         uint cv = volumes[_truthIndex];
         uint reward_sum = 0;
         for(i=0; i<_addresses.length; i++) {
